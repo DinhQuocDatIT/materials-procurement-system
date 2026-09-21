@@ -1,36 +1,57 @@
+
+
 .sidebar {
   position: fixed;
   top: 0;
   left: 0;
   bottom: 0;
+
   width: 240px;
-  background-color: var(--color-background);
-  border-right: 1px solid var(--color-border);
+
+  background: #101c2c;
+  border-right: 1px solid #26384d;
+
   display: flex;
   flex-direction: column;
+
   transition:
     width 0.2s ease,
     transform 0.2s ease;
+
   z-index: 1001;
   overflow-x: hidden;
+
+  /* nhẹ giống dashboard logistics */
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.12);
 }
 
 .sidebar.closed {
   width: 70px;
 }
 
+
+/* =========================================================
+   TOP / LOGO
+   ========================================================= */
+
 .topSection {
   height: 70px;
+
   display: flex;
   align-items: center;
+
   padding: 0 18px;
-  border-bottom: 1px solid var(--color-border);
+
+  background: #0d1827;
+  border-bottom: 1px solid #26384d;
+
   flex-shrink: 0;
 }
 
 .logoContainer {
   display: flex;
   align-items: center;
+
   width: 100%;
 }
 
@@ -38,124 +59,282 @@
   padding: 0;
   justify-content: center;
 }
+
 .sidebar.closed .logoContainer {
   justify-content: center;
 }
 
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
 .nav {
   padding: 16px 8px;
+
   display: flex;
   flex-direction: column;
-  gap: 4px;
+
+  gap: 5px;
+
   flex: 1;
   overflow-y: auto;
 }
 
+
+/* Scrollbar */
+
+.nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: #30445b;
+  border-radius: 10px;
+}
+
+.nav::-webkit-scrollbar-thumb:hover {
+  background: #3f5872;
+}
+
+
+/* =========================================================
+   MAIN NAV LINK
+   ========================================================= */
+
 .navLink {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 8px;
+
+  gap: 12px;
+
+  padding: 11px 14px;
+
+  border-radius: 7px;
+
   text-decoration: none;
-  color: var(--color-text-muted);
+
+  color: #a8b6c7;
+
   font-weight: 500;
   font-size: 0.85rem;
-  transition: all 0.15s ease;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+
   white-space: nowrap;
 }
 
+
+/* Hover */
+
 .navLink:hover {
-  background-color: var(--color-surface);
-  color: var(--color-primary);
+  background: #1a2a3e;
+  color: #ffffff;
+
+  transform: translateX(2px);
 }
 
+
+/* Active */
+
 .navLink.active {
-  background-color: var(--color-tertiary);
-  color: var(--color-primary);
+  background: linear-gradient(
+    90deg,
+    #087f8c 0%,
+    #0e9aa7 100%
+  );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 4px 12px rgba(8, 127, 140, 0.28);
+
+  position: relative;
 }
+
+
+/* thanh nhỏ bên trái active */
+
+.navLink.active::before {
+  content: "";
+
+  position: absolute;
+
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+
+  width: 3px;
+
+  background: #ffb547;
+
+  border-radius: 0 4px 4px 0;
+}
+
+
+/* =========================================================
+   ICON
+   ========================================================= */
 
 .iconWrapper {
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   width: 20px;
   height: 20px;
+
   flex-shrink: 0;
 }
 
 .icon {
   font-size: 0.95rem;
+
+  color: inherit;
+
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
 }
+
+.navLink:hover .icon {
+  transform: scale(1.08);
+}
+
+
+/* =========================================================
+   LABEL
+   ========================================================= */
 
 .label {
   font-size: 13px;
   font-weight: 500;
-  transition: opacity 0.15s ease;
+
+  transition:
+    opacity 0.15s ease,
+    width 0.15s ease;
 }
 
 .sidebar.closed .label {
   opacity: 0;
+
   pointer-events: none;
+
   width: 0;
   margin: 0;
 }
 
 .sidebar.closed .navLink {
   justify-content: center;
-  padding: 10px 0;
+
+  padding: 11px 0;
+
   gap: 0;
 }
 
-/* ===== MENU GROUP ===== */
+
+/* =========================================================
+   MENU GROUP
+   ========================================================= */
+
 .menuGroup {
   display: flex;
   flex-direction: column;
+
   gap: 2px;
 }
 
+
+/* =========================================================
+   PARENT MENU
+   ========================================================= */
+
 .parentLink {
   width: 100%;
+
   border: none;
+
   background: transparent;
+
   cursor: pointer;
+
   text-align: left;
+
   font-family: inherit;
 }
 
 .parentLink:hover {
-  background-color: var(--color-surface);
-  color: var(--color-primary);
+  background: #1a2a3e;
+  color: #ffffff;
 }
 
+
+/* Parent đang mở */
+
 .parentActive {
-  color: var(--color-primary);
+  background: #18283b;
+
+  color: #ffffff;
+
   font-weight: 600;
+
+  border-left: 3px solid #0ea5a8;
 }
+
+
+/* =========================================================
+   CHEVRON
+   ========================================================= */
 
 .chevron {
   font-size: 0.65rem;
+
   margin-left: auto;
-  color: var(--color-text-muted);
-  transition: transform 0.2s ease;
+
+  color: #72849a;
+
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+
   flex-shrink: 0;
 }
 
 .chevronOpen {
   transform: rotate(180deg);
+
+  color: #0ea5a8;
 }
+
 .sidebar.closed .chevron {
   display: none;
 }
 
-/* ===== SUBMENU ===== */
+
+/* =========================================================
+   SUBMENU
+   ========================================================= */
+
 .submenu {
   display: flex;
   flex-direction: column;
+
   gap: 2px;
-  padding: 2px 0 4px 0;
-  margin-left: 8px;
-  border-left: 1.5px solid var(--color-border);
+
+  padding: 4px 0 7px 0;
+
+  margin-left: 14px;
+
+  border-left: 1px solid #30445b;
+
   animation: slideDown 0.2s ease;
 }
 
@@ -164,71 +343,132 @@
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
+
+/* =========================================================
+   SUB LINK
+   ========================================================= */
+
 .subLink {
   display: flex;
   align-items: center;
+
   gap: 10px;
-  padding: 7px 12px 7px 16px;
+
+  padding: 8px 12px 8px 16px;
+
   border-radius: 6px;
+
   text-decoration: none;
-  color: var(--color-text-muted);
+
+  color: #93a4b8;
+
   font-size: 12.5px;
-  transition: all 0.15s ease;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+
   white-space: nowrap;
 }
 
 .subLink:hover {
-  background-color: var(--color-surface);
-  color: var(--color-primary);
+  background: #192a3e;
+
+  color: #ffffff;
+
+  transform: translateX(2px);
 }
 
+
+/* Active submenu */
+
 .subActive {
-  background-color: var(--color-tertiary);
-  color: var(--color-primary);
+  background: rgba(14, 165, 168, 0.16);
+
+  color: #4dd6d9;
+
   font-weight: 600;
+
+  box-shadow:
+    inset 2px 0 0 #0ea5a8;
 }
+
+
+/* =========================================================
+   SUB DOT
+   ========================================================= */
 
 .subDot {
   width: 5px;
   height: 5px;
+
   border-radius: 50%;
-  background-color: var(--color-text-muted);
+
+  background: #52657a;
+
   flex-shrink: 0;
-  transition: all 0.15s ease;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .subLink:hover .subDot,
 .subActive .subDot {
-  background-color: var(--color-primary);
-  transform: scale(1.3);
+  background: #0ea5a8;
+
+  transform: scale(1.4);
 }
+
+
+/* =========================================================
+   SUB LABEL
+   ========================================================= */
 
 .subLabel {
   font-size: 12.5px;
 }
 
+
+/* Khi sidebar đóng */
+
 .sidebar.closed .submenu {
   display: none;
 }
 
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
 @media (max-width: 768px) {
+
   .sidebar {
     transform: translateX(-100%);
+
     width: 240px;
   }
+
   .sidebar.closed {
     transform: translateX(0);
+
     width: 240px;
   }
+
   .sidebar.closed .label {
     opacity: 1;
+
     pointer-events: auto;
+
     width: auto;
   }
 }
+

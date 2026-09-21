@@ -1,8 +1,14 @@
 .page {
   width: 100%;
+  background-color: #ffffff;
+  padding: 24px;
+  min-height: 100vh;
 }
 
-/* ===== HEADER ===== */
+/* =========================================================
+   HEADER
+========================================================= */
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -17,28 +23,157 @@
   flex-direction: column;
 }
 
+.titleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.iconBox {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #087f8c, #0ea5a8);
+  color: #ffffff;
+  border-radius: 8px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 18px;
+
+  box-shadow: 0 3px 8px rgba(14, 165, 168, 0.2);
+}
+
 .title {
   margin: 0;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--color-text);
+  color: #101c2c;
 }
 
-.subtitle {
-  margin: 4px 0 0;
-  color: var(--color-text-muted);
-  font-size: 13px;
+/* ===== ADD BUTTON ===== */
+
+.addBtn {
+  background: #0ea5a8 !important;
+  border-color: #0ea5a8 !important;
+  color: #ffffff !important;
+
+  border-radius: 6px;
+  font-weight: 500;
+  height: 38px;
+
+  box-shadow: 0 2px 5px rgba(14, 165, 168, 0.18);
+
+  transition: all 0.2s ease;
 }
 
-/* ===== CARD ===== */
+.addBtn:hover,
+.addBtn:focus {
+  background: #0f8f91 !important;
+  border-color: #0f8f91 !important;
+  color: #ffffff !important;
+
+  box-shadow: 0 4px 10px rgba(14, 165, 168, 0.25);
+}
+
+/* =========================================================
+   FILTER CARD
+========================================================= */
+
 .filterCard {
   margin-bottom: 16px;
-}
-.tableCard {
-  overflow: hidden;
+  border-radius: 8px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
 }
 
-/* ===== RATING ===== */
+.filterContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== SEARCH ===== */
+
+.searchBox {
+  flex: 1;
+  min-width: 260px;
+  border-radius: 6px;
+}
+
+.searchBox:hover,
+.searchBox:focus-within {
+  border-color: #0ea5a8 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 168, 0.08);
+}
+
+/* ===== FILTER BUTTON ===== */
+
+.filterBtn {
+  border-radius: 6px;
+  color: #475569;
+  border-color: #d9e1e8;
+
+  transition: all 0.2s ease;
+}
+
+.filterBtn:hover,
+.filterBtn:focus {
+  color: #0ea5a8 !important;
+  border-color: #0ea5a8 !important;
+}
+
+/* =========================================================
+   TABLE CARD
+========================================================= */
+
+.tableCard {
+  border-radius: 8px;
+  overflow: hidden;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+/* ===== TABLE HEADER ===== */
+
+.tableCard .ant-table-thead > tr > th {
+  background-color: #f1f5f9;
+  color: #334155;
+
+  font-weight: 600;
+  font-size: 13px;
+
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* ===== TABLE ROW ===== */
+
+.tableCard .ant-table-tbody > tr:hover > td {
+  background-color: #f0fdfa !important;
+}
+
+.tableCard .ant-table-tbody > tr > td {
+  color: #475569;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* ===== SUPPLIER NAME ===== */
+
+.supplierName {
+  font-weight: 600;
+  color: #101c2c;
+}
+
+/* =========================================================
+   RATING
+========================================================= */
+
 .ratingCell {
   display: inline-flex;
   align-items: center;
@@ -50,75 +185,273 @@
   font-size: 14px;
 }
 
-/* ===== RANK BADGE ===== */
+/* =========================================================
+   RANK BADGE
+========================================================= */
+
 .rankBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+
+  width: 28px;
+  height: 28px;
+
+  border-radius: 6px;
+
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
 }
+
+/* Rank A */
 
 .rankA {
-  background: #d1fae5;
-  color: #047857;
+  background: #ccfbf1;
+  color: #0f766e;
 }
 
+/* Rank B */
+
 .rankB {
-  background: #e0e7ff;
-  color: #4338ca;
+  background: #dbeafe;
+  color: #1e40af;
 }
+
+/* Rank C */
 
 .rankC {
   background: #f1f5f9;
   color: #475569;
 }
 
-/* ===== STATUS BADGE ===== */
+/* =========================================================
+   STATUS BADGE
+========================================================= */
+
 .statusBadge {
   display: inline-block;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
+
+  padding: 4px 12px;
+
+  border-radius: 6px;
+
+  font-size: 12px;
   font-weight: 500;
+
   white-space: nowrap;
 }
 
+/* ===== PRIORITY ===== */
+
 .statusPriority {
-  background: #d1fae5;
-  color: #047857;
+  background: #ccfbf1;
+  color: #0f766e;
 }
+
+/* ===== GOOD ===== */
 
 .statusGood {
   background: #dbeafe;
-  color: #1d4ed8;
+  color: #1e40af;
 }
+
+/* ===== AVERAGE ===== */
 
 .statusAverage {
   background: #fef3c7;
   color: #b45309;
 }
 
+/* ===== REVIEW ===== */
+
 .statusReview {
   background: #fee2e2;
   color: #b91c1c;
 }
+
+/* ===== POOR ===== */
 
 .statusPoor {
   background: #fecaca;
   color: #991b1b;
 }
 
-/* ===== RESPONSIVE ===== */
+/* =========================================================
+   PAGINATION
+========================================================= */
+
+/* Pagination nằm bên phải */
+
+.tableCard .ant-pagination {
+  margin-right: 16px;
+}
+
+/* Nút pagination */
+
+.tableCard .ant-pagination-item {
+  border-radius: 6px;
+}
+
+/* Trang hiện tại */
+
+.tableCard .ant-pagination-item-active {
+  border-color: #0ea5a8;
+}
+
+.tableCard .ant-pagination-item-active a {
+  color: #0ea5a8;
+}
+
+/* Hover pagination */
+
+.tableCard .ant-pagination-item:hover {
+  border-color: #0ea5a8;
+}
+
+.tableCard .ant-pagination-item:hover a {
+  color: #0ea5a8;
+}
+
+/* Previous / Next */
+
+.tableCard .ant-pagination-prev:hover .ant-pagination-item-link,
+.tableCard .ant-pagination-next:hover .ant-pagination-item-link {
+  color: #0ea5a8;
+  border-color: #0ea5a8;
+}
+
+/* =========================================================
+   ACTION BUTTONS
+========================================================= */
+
+.tableCard .ant-btn-text {
+  border-radius: 6px;
+}
+
+.tableCard .ant-btn-text:hover {
+  background-color: #f0fdfa;
+}
+
+/* Edit */
+
+.tableCard .ant-btn-text.ant-btn-default {
+  color: #475569;
+}
+
+/* =========================================================
+   INPUT / SELECT
+========================================================= */
+
+.page .ant-input,
+.page .ant-input-number,
+.page .ant-select-selector {
+  border-radius: 6px;
+}
+
+.page .ant-input:hover,
+.page .ant-input-number:hover,
+.page .ant-select-selector:hover {
+  border-color: #0ea5a8 !important;
+}
+
+.page .ant-input:focus,
+.page .ant-input-focused,
+.page .ant-input-number-focused,
+.page .ant-select-focused .ant-select-selector {
+  border-color: #0ea5a8 !important;
+  box-shadow: 0 0 0 2px rgba(14, 165, 168, 0.08) !important;
+}
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.page .ant-modal-content {
+  border-radius: 10px;
+}
+
+.page .ant-modal-header {
+  border-radius: 10px 10px 0 0;
+}
+
+.page .ant-modal-title {
+  color: #101c2c;
+  font-weight: 700;
+}
+
+/* Modal primary button */
+
+.page .ant-modal-footer .ant-btn-primary {
+  background: #0ea5a8 !important;
+  border-color: #0ea5a8 !important;
+}
+
+.page .ant-modal-footer .ant-btn-primary:hover {
+  background: #0f8f91 !important;
+  border-color: #0f8f91 !important;
+}
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.page .ant-card {
+  border-color: #e2e8f0;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
 @media (max-width: 768px) {
+  .page {
+    padding: 16px;
+  }
+
   .header {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .subtitle {
+    margin-left: 0;
+  }
+
+  .filterContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchBox,
+  .filterContainer > * {
+    width: 100% !important;
+  }
+
+  .addBtn {
+    width: 100%;
+  }
+
+  .tableCard {
+    overflow-x: auto;
+  }
+}
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+  .page {
+    padding: 12px;
+  }
+
   .title {
     font-size: 18px;
+  }
+
+  .iconBox {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
   }
 }

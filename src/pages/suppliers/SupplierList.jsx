@@ -14,7 +14,6 @@ import {
   Row,
   Col,
   Tooltip,
-  Rate,
 } from "antd";
 import {
   PlusOutlined,
@@ -22,9 +21,9 @@ import {
   EditOutlined,
   DeleteOutlined,
   EyeOutlined,
-  ReloadOutlined,
   MoreOutlined,
   FilterOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import { supplierService } from "../../services/supplierService";
@@ -32,7 +31,6 @@ import styles from "./SupplierList.module.css";
 
 const { Option } = Select;
 
-// ===== MAP LABEL =====
 const statusLabels = {
   PRIORITY: { text: "Ưu tiên", className: "statusPriority" },
   GOOD: { text: "Tốt", className: "statusGood" },
@@ -62,6 +60,10 @@ export default function SupplierList() {
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedField, setSelectedField] = useState(undefined);
+  const [selectedRank, setSelectedRank] = useState(undefined);
+  const [selectedStatus, setSelectedStatus] = useState(undefined);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [form] = Form.useForm();
@@ -86,29 +88,31 @@ export default function SupplierList() {
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((s) => {
       const q = search.toLowerCase();
-      return (
+      const matchSearch =
         s.name.toLowerCase().includes(q) ||
         s.tax_code.toLowerCase().includes(q) ||
-        s.field.toLowerCase().includes(q)
-      );
-    });
-  }, [suppliers, search]);
+        s.field.toLowerCase().includes(q);
 
-  // ===== THÊM =====
+      const matchField = selectedField ? s.field === selectedField : true;
+      const matchRank = selectedRank ? s.rank === selectedRank : true;
+      const matchStatus = selectedStatus ? s.status === selectedStatus : true;
+
+      return matchSearch && matchField && matchRank && matchStatus;
+    });
+  }, [suppliers, search, selectedField, selectedRank, selectedStatus]);
+
   const handleAdd = () => {
     setEditingSupplier(null);
     form.resetFields();
     setIsModalOpen(true);
   };
 
-  // ===== SỬA =====
   const handleEdit = (supplier) => {
     setEditingSupplier(supplier);
     form.setFieldsValue(supplier);
     setIsModalOpen(true);
   };
 
-  // ===== XÓA =====
   const handleDelete = async (id) => {
     try {
       const s = suppliers.find((x) => x.id === id);
@@ -120,12 +124,9 @@ export default function SupplierList() {
     }
   };
 
-  // ===== LƯU =====
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
-
-      // Auto rank theo rating
       const rank =
         values.rating >= 4.5 ? "A" : values.rating >= 3.5 ? "B" : "C";
       const payload = { ...values, rank };
@@ -154,9 +155,11 @@ export default function SupplierList() {
     }
   };
 
-  // ===== RESET =====
   const handleReset = () => {
     setSearch("");
+    setSelectedField(undefined);
+    setSelectedRank(undefined);
+    setSelectedStatus(undefined);
     toast.info("Đã đặt lại bộ lọc");
   };
 
@@ -164,13 +167,14 @@ export default function SupplierList() {
   const columns = [
     {
       title: "STT",
-      width: 70,
-      render: (_, __, index) => <strong>{index + 1}</strong>,
+      width: 60,
+      align: "center",
+      render: (_, __, index) => <span>{index + 1}</span>,
     },
     {
       title: "Tên nhà cung cấp",
       dataIndex: "name",
-      render: (name) => <strong>{name}</strong>,
+      render: (name) => <span className={styles.supplierName}>{name}</span>,
     },
     {
       title: "Mã số thuế",
@@ -180,39 +184,33 @@ export default function SupplierList() {
     {
       title: "Lĩnh vực cung cấp",
       dataIndex: "field",
-      width: 180,
+      width: 160,
     },
     {
       title: "Số hợp đồng",
       dataIndex: "contract_count",
-      width: 110,
+      width: 100,
       align: "center",
       sorter: (a, b) => a.contract_count - b.contract_count,
     },
     {
       title: "Điểm TB (5)",
       dataIndex: "rating",
-      width: 130,
+      width: 110,
       align: "center",
       sorter: (a, b) => a.rating - b.rating,
       render: (rating) => (
         <span className={styles.ratingCell}>
           <span className={styles.star}>★</span>
-          <strong>{rating.toFixed(1)}</strong>
+          <span>{rating.toFixed(1)}</span>
         </span>
       ),
     },
     {
       title: "Xếp loại",
       dataIndex: "rank",
-      width: 100,
+      width: 90,
       align: "center",
-      filters: [
-        { text: "A", value: "A" },
-        { text: "B", value: "B" },
-        { text: "C", value: "C" },
-      ],
-      onFilter: (value, record) => record.rank === value,
       render: (rank) => {
         const r = rankLabels[rank] || rankLabels.C;
         return (
@@ -225,13 +223,8 @@ export default function SupplierList() {
     {
       title: "Trạng thái",
       dataIndex: "status",
-      width: 140,
+      width: 130,
       align: "center",
-      filters: Object.entries(statusLabels).map(([value, { text }]) => ({
-        text,
-        value,
-      })),
-      onFilter: (value, record) => record.status === value,
       render: (status) => {
         const s = statusLabels[status] || statusLabels.GOOD;
         return (
@@ -243,14 +236,15 @@ export default function SupplierList() {
     },
     {
       title: "Thao tác",
-      width: 140,
+      width: 130,
       align: "center",
       fixed: "right",
       render: (_, record) => (
-        <Space size={4}>
+        <Space size={2}>
           <Tooltip title="Xem">
             <Button
               type="text"
+              size="small"
               icon={<EyeOutlined />}
               onClick={() => toast.info(`Xem: ${record.name}`)}
             />
@@ -258,6 +252,7 @@ export default function SupplierList() {
           <Tooltip title="Sửa">
             <Button
               type="text"
+              size="small"
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             />
@@ -271,9 +266,22 @@ export default function SupplierList() {
             onConfirm={() => handleDelete(record.id)}
           >
             <Tooltip title="Xóa">
-              <Button type="text" danger icon={<DeleteOutlined />} />
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              />
             </Tooltip>
           </Popconfirm>
+          <Tooltip title="Thêm">
+            <Button
+              type="text"
+              size="small"
+              icon={<MoreOutlined />}
+              onClick={() => toast.info(`Thêm tùy chọn cho: ${record.name}`)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -284,86 +292,85 @@ export default function SupplierList() {
       {/* HEADER */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>Danh sách nhà cung cấp</h2>
-          <p className={styles.subtitle}>
-            Quản lý thông tin nhà cung cấp, theo dõi lịch sử hợp tác và đánh giá
-            năng lực
-          </p>
+          <div className={styles.titleWrapper}>
+            <div className={styles.iconBox}>
+              <TeamOutlined />
+            </div>
+            <div>
+              <h2 className={styles.title}>Danh sách nhà cung cấp</h2>
+              <p className={styles.subtitle}>
+                Quản lý thông tin nhà cung cấp, theo dõi lịch sử hợp tác và đánh
+                giá năng lực
+              </p>
+            </div>
+          </div>
         </div>
         <Button
           type="primary"
-          size="large"
           icon={<PlusOutlined />}
           onClick={handleAdd}
+          className={styles.addBtn}
         >
           Thêm nhà cung cấp
         </Button>
       </div>
 
-      {/* BỘ LỌC */}
-      <Card className={styles.filterCard}>
-        <Row gutter={[12, 12]}>
-          <Col xs={24} md={10}>
-            <Input
-              size="large"
-              placeholder="Tìm kiếm theo tên, mã số thuế, lĩnh vực..."
-              prefix={<SearchOutlined />}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              allowClear
-            />
-          </Col>
-          <Col xs={12} md={4}>
-            <Select
-              size="large"
-              placeholder="Tất cả nhóm ngành"
-              style={{ width: "100%" }}
-              allowClear
-            >
-              {fieldOptions.map((f) => (
-                <Option key={f} value={f}>
-                  {f}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col xs={12} md={3}>
-            <Select
-              size="large"
-              placeholder="Tất cả xếp loại"
-              style={{ width: "100%" }}
-              allowClear
-            >
-              <Option value="A">A</Option>
-              <Option value="B">B</Option>
-              <Option value="C">C</Option>
-            </Select>
-          </Col>
-          <Col xs={12} md={4}>
-            <Select
-              size="large"
-              placeholder="Tất cả trạng thái"
-              style={{ width: "100%" }}
-              allowClear
-            >
-              {Object.entries(statusLabels).map(([value, { text }]) => (
-                <Option key={value} value={value}>
-                  {text}
-                </Option>
-              ))}
-            </Select>
-          </Col>
-          <Col xs={12} md={3}>
-            <Button
-              size="large"
-              icon={<FilterOutlined />}
-              onClick={handleReset}
-              block
-            >
-              Bộ lọc nâng cao
-            </Button>
-          </Col>
-        </Row>
+      {/* BỘ LỌC (1 HÀNG GỌN GÀNG) */}
+      <Card className={styles.filterCard} bodyStyle={{ padding: "16px" }}>
+        <div className={styles.filterContainer}>
+          <Input
+            placeholder="Tìm kiếm theo tên, mã số thuế, lĩnh vực..."
+            prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            allowClear
+            className={styles.searchBox}
+          />
+          <Select
+            placeholder="Tất cả nhóm ngành"
+            style={{ width: 180 }}
+            value={selectedField}
+            onChange={setSelectedField}
+            allowClear
+          >
+            {fieldOptions.map((f) => (
+              <Option key={f} value={f}>
+                {f}
+              </Option>
+            ))}
+          </Select>
+          <Select
+            placeholder="Tất cả xếp loại"
+            style={{ width: 140 }}
+            value={selectedRank}
+            onChange={setSelectedRank}
+            allowClear
+          >
+            <Option value="A">A</Option>
+            <Option value="B">B</Option>
+            <Option value="C">C</Option>
+          </Select>
+          <Select
+            placeholder="Tất cả trạng thái"
+            style={{ width: 150 }}
+            value={selectedStatus}
+            onChange={setSelectedStatus}
+            allowClear
+          >
+            {Object.entries(statusLabels).map(([value, { text }]) => (
+              <Option key={value} value={value}>
+                {text}
+              </Option>
+            ))}
+          </Select>
+          <Button
+            icon={<FilterOutlined />}
+            onClick={handleReset}
+            className={styles.filterBtn}
+          >
+            Bộ lọc nâng cao
+          </Button>
+        </div>
       </Card>
 
       {/* BẢNG */}
@@ -373,13 +380,13 @@ export default function SupplierList() {
           columns={columns}
           dataSource={filteredSuppliers}
           rowKey="id"
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1100 }}
           pagination={{
             pageSize: 8,
             showSizeChanger: false,
             showTotal: (total, range) =>
               `Hiển thị ${range[0]} - ${range[1]} / ${total} nhà cung cấp`,
-            position: ["bottomLeft"],
+            position: ["bottomRight"],
           }}
         />
       </Card>
