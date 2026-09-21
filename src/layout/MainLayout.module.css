@@ -1,0 +1,41 @@
+.mainLayout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  margin-top: 70px;
+  min-height: calc(100vh - 70px);
+  position: relative;
+}
+
+.content {
+  flex: 1;
+  margin-left: 240px;
+  padding: 24px;
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
+  font-size: 0.925rem;
+}
+
+.content.expanded {
+  margin-left: 70px;
+}
+
+.contentInner {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .content,
+  .content.expanded {
+    margin-left: 0;
+  }
+}
