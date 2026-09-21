@@ -43,4 +43,5 @@ export const sidebarMenus = [
   },
   { path: "/dashboard/users", name: "Người dùng", icon: faUsers },
   { path: "/dashboard/settings", name: "Cài đặt", icon: faGear },
+  { path: "/dashboard/users", name: "Người dùng", icon: faUsers },
 ];

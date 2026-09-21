@@ -5,11 +5,9 @@ import AppRoutes from "./routes/AppRoutes";
 
 function App() {
   return (
-    <ConfigProvider locale={viVN}>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </ConfigProvider>
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

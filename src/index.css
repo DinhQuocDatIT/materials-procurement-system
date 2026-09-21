@@ -1,12 +1,42 @@
 :root {
-  --color-primary: #4f46e5;
-  --color-tertiary: #eef2ff;
+  /* Primary */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-accent: #a855f7;
+
+  /* Dark */
+  --color-dark-bg: #0b1120;
+  --color-dark-bg-2: #111827;
+  --color-dark-bg-3: #1e293b;
+  --color-dark-border: rgba(255, 255, 255, 0.08);
+  --color-dark-text: #f1f5f9;
+  --color-dark-text-muted: #94a3b8;
+  --color-dark-text-dim: #64748b;
+
+  /* Light */
   --color-background: #ffffff;
-  --color-surface: #f9fafb;
-  --color-border: #e5e7eb;
-  --color-text: #111827;
-  --color-text-muted: #6b7280;
+  --color-surface: #f8fafc;
+  --color-surface-2: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-muted: #64748b;
+  --color-text-dim: #94a3b8;
   --color-text-white: #ffffff;
+
+  /* Status */
+  --color-danger: #ef4444;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* Transition */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -33,4 +63,20 @@ a {
 }
 button {
   font-family: inherit;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
 }

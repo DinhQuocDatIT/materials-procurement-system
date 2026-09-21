@@ -4,11 +4,25 @@ import {
   faBars,
   faBell,
   faChevronDown,
+  faRightFromBracket,
 } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import styles from "./Header.module.css";
+import AuthStorage from "../../../services/AuthStorage";
 
 const Header = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const navigate = useNavigate();
+  const user = AuthStorage.getUser();
+  const userName = user?.name || "Người dùng";
+  const userRole = user?.role || "STAFF";
+
+  const handleLogout = () => {
+    AuthStorage.removeUser();
+    toast.success("Đã đăng xuất");
+    navigate("/login");
+  };
 
   return (
     <header
@@ -38,8 +52,8 @@ const Header = ({ onToggleSidebar, isSidebarOpen }) => {
             />
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>Quản trị viên</span>
-            <span className={styles.userRole}>Admin</span>
+            <span className={styles.userName}>{userName}</span>
+            <span className={styles.userRole}>{userRole}</span>
           </div>
           <FontAwesomeIcon
             icon={faChevronDown}
@@ -48,8 +62,10 @@ const Header = ({ onToggleSidebar, isSidebarOpen }) => {
 
           {isOpen && (
             <div className={styles.dropdown}>
-              <button className={styles.dropdownItem}>Thông tin cá nhân</button>
-              <button className={styles.dropdownItem}>Đăng xuất</button>
+              <button className={styles.dropdownItem} onClick={handleLogout}>
+                <FontAwesomeIcon icon={faRightFromBracket} />
+                Đăng xuất
+              </button>
             </div>
           )}
         </div>
