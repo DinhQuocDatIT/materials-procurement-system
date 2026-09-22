@@ -1,4 +1,6 @@
-/* ==================== PAGE ==================== */
+/* =========================
+   PAGE WRAPPER
+========================= */
 .page {
   width: 100%;
   max-width: 1200px;
@@ -13,12 +15,14 @@
   min-height: 400px;
 }
 
-/* ==================== BREADCRUMB ==================== */
+/* =========================
+   BREADCRUMB
+========================= */
 .breadcrumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   font-size: 13px;
   color: #64748b;
 }
@@ -32,23 +36,18 @@
   font-weight: 600;
 }
 
-/* ==================== PAGE HEADER ==================== */
-.pageHeader {
+/* =========================
+   HEADER
+========================= */
+.header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 4px;
-  flex-wrap: wrap;
-}
-
-.pageHeaderLeft {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
 }
 
 .backBtn {
+  align-self: flex-start;
   padding-left: 0 !important;
   color: #595959 !important;
   font-size: 13px;
@@ -59,134 +58,69 @@
   color: #1677ff !important;
 }
 
-/* ==================== TITLE BLOCK ==================== */
-.titleBlock {
+.headerMain {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
-  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.pageTitle {
-  margin: 0;
+.headerIcon {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eaf3ff, #dbeafe);
+  color: #1677ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 24px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-size: 22px;
   font-weight: 700;
   color: #0f172a;
-  letter-spacing: -0.02em;
   line-height: 1.35;
 }
 
-.statusBadge {
-  padding: 4px 12px !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  margin: 0 !important;
-}
-
-/* ==================== INFO CARD (3 CỘT) ==================== */
-.infoCard {
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
-}
-
-.infoCard :global(.ant-card-body) {
-  padding: 24px 28px;
-}
-
-.infoGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px 32px;
-}
-
-.infoItem {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  min-width: 0;
-}
-
-.infoLabel {
+.subtitle {
   display: flex;
   align-items: center;
-  gap: 6px;
-  color: #8c8c8c;
-  font-size: 12.5px;
-  font-weight: 500;
-  line-height: 1.3;
+  gap: 4px;
+  font-size: 13px;
+  color: #64748b;
 }
 
-.infoLabelIcon {
-  color: #bfbfbf;
-  font-size: 12px;
-}
-
-.infoValue {
+.subtitle strong {
   color: #262626;
-  font-size: 14.5px;
   font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.4;
 }
 
-.valueBlue {
-  color: #1677ff;
-}
-
-.valueGreen {
-  color: #16a34a;
-}
-
-.valueOrange {
-  color: #faad14;
-}
-
-.valueRed {
-  color: #ef4444;
-}
-
-.infoSub {
-  color: #94a3b8;
-  font-size: 11.5px;
-  line-height: 1.3;
-}
-
-/* ==================== TABLE CARD ==================== */
-.tableCard {
+/* =========================
+   CARD
+========================= */
+.card {
+  margin-bottom: 20px;
   border-radius: 12px;
   border: 1px solid #f0f0f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
 }
 
-.tableCard :global(.ant-card-head) {
-  min-height: 54px;
-  padding: 0 22px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.tableCard :global(.ant-card-head-title) {
-  padding: 16px 0;
-}
-
-.tableCard :global(.ant-card-body) {
-  padding: 18px 22px 22px;
+.card :global(.ant-card-head) {
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 24px;
+  min-height: 56px;
 }
 
 .sectionTitle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 9px;
-  color: #0f172a;
+  gap: 10px;
   font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
+  font-weight: 650;
+  color: #0f172a;
 }
 
 .sectionIcon {
@@ -194,54 +128,78 @@
   font-size: 17px;
 }
 
-.codeText {
-  color: #1677ff;
+/* =========================
+   MATERIAL TABLE
+========================= */
+.mainTable :global(.ant-table) {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
-.nameText {
+.mainTable :global(.ant-table-thead > tr > th) {
+  background: #fafafa !important;
+  color: #595959 !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+
+.mainTable :global(.ant-table-tbody > tr > td) {
+  color: #595959;
+  font-size: 13px;
+}
+
+.mainTable :global(.ant-table-tbody > tr:hover > td) {
+  background: #f8fbff !important;
+}
+
+.materialCode {
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.materialName {
   color: #262626;
   font-weight: 500;
 }
 
-/* ==================== NOTE CARD ==================== */
-.noteCard {
-  border-radius: 12px;
-  border: 1px solid #f0f0f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-  margin-bottom: 16px;
-  background: #fafcff;
+/* =========================
+   SUMMARY ROW (TỔNG CỘNG)
+========================= */
+.summaryRow :global(td) {
+  background: #f8fafc !important;
+  border-top: 1px solid #e8eef5 !important;
+  padding: 14px 16px !important;
 }
 
-.noteCard :global(.ant-card-body) {
-  padding: 18px 22px;
-}
-
-.noteHeader {
+.summaryInner {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
 }
 
-.noteIcon {
-  color: #1677ff;
-  font-size: 16px;
-}
-
-.noteLabel {
-  font-weight: 700;
-  font-size: 14px;
+.summaryLabel {
   color: #262626;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-.noteContent {
-  color: #595959;
-  font-size: 13.5px;
-  line-height: 1.6;
-  padding-left: 26px;
+.summaryValue {
+  color: #1677ff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
-/* ==================== FOOTER ==================== */
+/* =========================
+   FOOTER
+========================= */
 .footer {
   position: fixed;
   z-index: 100;
@@ -255,79 +213,40 @@
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.04);
   backdrop-filter: blur(8px);
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 12px;
   transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ==================== RESPONSIVE ==================== */
-@media (max-width: 1100px) {
-  .infoGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px 28px;
-  }
+.footer.expanded {
+  left: 70px;
 }
 
+/* =========================
+   RESPONSIVE
+========================= */
 @media (max-width: 768px) {
   .footer {
     left: 0 !important;
     padding: 12px 16px;
   }
 
-  .pageTitle {
+  .title {
     font-size: 18px;
   }
 
-  .infoCard :global(.ant-card-body) {
-    padding: 18px 16px;
+  .headerIcon {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 
-  .infoGrid {
-    grid-template-columns: 1fr;
-    gap: 14px;
+  .summaryInner {
+    gap: 8px;
   }
 
-  .tableCard :global(.ant-card-head) {
-    padding: 0 16px;
+  .summaryValue {
+    font-size: 16px;
   }
-
-  .tableCard :global(.ant-card-body) {
-    padding: 14px 16px 18px;
-  }
-
-  .noteCard :global(.ant-card-body) {
-    padding: 16px;
-  }
-}
-/* ==================== INFO LINK ==================== */
-.infoLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: #1677ff;
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: color 0.15s ease;
-  text-align: left;
-}
-
-.infoLink:hover {
-  color: #0958d9;
-  text-decoration: underline;
-}
-
-.infoLinkArrow {
-  font-size: 14px;
-  transition: transform 0.15s ease;
-  display: inline-block;
-}
-
-.infoLink:hover .infoLinkArrow {
-  transform: translateX(3px);
 }

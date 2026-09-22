@@ -81,45 +81,89 @@ export default function RequestDetail() {
   const isApproved = request.status === "APPROVED";
   const isRejected = request.status === "REJECTED";
 
+  // ⭐ Tính tổng tiền
+  const totalAmount = (request.items || []).reduce((sum, item) => {
+    const price = Number(item.price || 0);
+    const qty = Number(item.quantity || 0);
+    return sum + price * qty;
+  }, 0);
+
+  const hasPrice = (request.items || []).some(
+    (item) => Number(item.price || 0) > 0,
+  );
+
   // Cột bảng vật tư
   const itemColumns = [
     {
       title: "STT",
-      width: 70,
+      width: 60,
       align: "center",
       render: (_, __, i) => i + 1,
     },
     {
       title: "Mã VT",
       dataIndex: ["material", "code"],
-      width: 120,
-      render: (v) => <strong>{v}</strong>,
+      width: 110,
+      render: (v) => <strong className={styles.materialCode}>{v}</strong>,
     },
     {
       title: "Tên vật tư",
       dataIndex: ["material", "name"],
+      render: (v) => <span className={styles.materialName}>{v}</span>,
     },
     {
-      title: "Đơn vị",
+      title: "ĐVT",
       dataIndex: ["material", "unit"],
-      width: 100,
+      width: 80,
       align: "center",
       render: (u) => <Tag>{u}</Tag>,
     },
     {
       title: "Số lượng",
       dataIndex: "quantity",
-      width: 120,
-      align: "center",
-      render: (q) => <strong style={{ fontSize: 15 }}>{q}</strong>,
+      width: 90,
+      align: "right",
+      render: (q) => <strong>{Number(q || 0).toLocaleString("vi-VN")}</strong>,
+    },
+    {
+      title: "Đơn giá",
+      dataIndex: "price",
+      width: 130,
+      align: "right",
+      render: (price) => {
+        const p = Number(price || 0);
+        if (!p) return <span style={{ color: "#bfbfbf" }}>—</span>;
+        return (
+          <span style={{ color: "#595959" }}>
+            {p.toLocaleString("vi-VN")} đ
+          </span>
+        );
+      },
+    },
+    {
+      title: "Thành tiền",
+      key: "total",
+      width: 150,
+      align: "right",
+      render: (_, record) => {
+        const price = Number(record.price || 0);
+        const qty = Number(record.quantity || 0);
+        const total = price * qty;
+        if (!price) return <span style={{ color: "#bfbfbf" }}>—</span>;
+        return (
+          <strong style={{ color: "#1677ff" }}>
+            {total.toLocaleString("vi-VN")} đ
+          </strong>
+        );
+      },
     },
     {
       title: "Tồn kho hiện tại",
       dataIndex: ["material", "current_stock"],
-      width: 150,
-      align: "center",
+      width: 130,
+      align: "right",
       render: (stock, record) => {
-        const isLow = stock < record.quantity;
+        const isLow = Number(stock || 0) < Number(record.quantity || 0);
         return (
           <span
             style={{
@@ -127,12 +171,33 @@ export default function RequestDetail() {
               fontWeight: 600,
             }}
           >
-            {stock}
+            {Number(stock || 0).toLocaleString("vi-VN")}
           </span>
         );
       },
     },
   ];
+
+  // ⭐ Summary row "Tổng cộng"
+  const renderSummary = () => {
+    if (!hasPrice) return null;
+    const totalCols = itemColumns.length;
+
+    return (
+      <Table.Summary fixed>
+        <Table.Summary.Row className={styles.summaryRow}>
+          <Table.Summary.Cell index={0} colSpan={totalCols}>
+            <div className={styles.summaryInner}>
+              <span className={styles.summaryLabel}>Tổng cộng: </span>
+              <span className={styles.summaryValue}>
+                {totalAmount.toLocaleString("vi-VN")} đ
+              </span>
+            </div>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      </Table.Summary>
+    );
+  };
 
   return (
     <div className={styles.page}>
@@ -145,21 +210,6 @@ export default function RequestDetail() {
         >
           Quay lại
         </Button>
-
-        <div className={styles.headerMain}>
-          <div className={styles.headerIcon}>
-            <FileTextOutlined />
-          </div>
-          <div>
-            <h2 className={styles.title}>Chi tiết yêu cầu mua sắm</h2>
-            <div className={styles.subtitle}>
-              <strong>{request.code}</strong>
-              <Tag color={status.color} style={{ marginLeft: 8 }}>
-                {status.text}
-              </Tag>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* THANH TIẾN TRÌNH */}
@@ -273,6 +323,14 @@ export default function RequestDetail() {
             </Descriptions.Item>
           )}
 
+          {hasPrice && (
+            <Descriptions.Item label="Tổng chi phí dự kiến" span={2}>
+              <span style={{ color: "#1677ff", fontWeight: 700, fontSize: 15 }}>
+                {totalAmount.toLocaleString("vi-VN")} đ
+              </span>
+            </Descriptions.Item>
+          )}
+
           {request.note && (
             <Descriptions.Item label="Ghi chú" span={2}>
               {request.note}
@@ -299,6 +357,8 @@ export default function RequestDetail() {
           pagination={false}
           size="middle"
           locale={{ emptyText: "Không có vật tư nào" }}
+          className={styles.mainTable}
+          summary={renderSummary}
         />
       </Card>
 

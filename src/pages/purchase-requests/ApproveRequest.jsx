@@ -1,29 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Card,
   Button,
   Table,
   Tag,
+  Descriptions,
+  Spin,
+  Alert,
   Modal,
   Input,
-  Alert,
-  Spin,
   Space,
+  Tooltip,
 } from "antd";
 import {
+  ArrowLeftOutlined,
   CheckOutlined,
   CloseOutlined,
-  ArrowLeftOutlined,
-  WarningOutlined,
   FileTextOutlined,
   InboxOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  WarningOutlined,
   PrinterOutlined,
   MoreOutlined,
-  ClockCircleOutlined,
-  CheckCircleOutlined,
-  TeamOutlined,
-  CalendarOutlined,
-  ShopOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import { useParams, useNavigate } from "react-router-dom";
@@ -31,7 +30,7 @@ import dayjs from "dayjs";
 import { purchaseRequestService } from "../../services/purchaseRequestService";
 import AuthStorage from "../../services/AuthStorage";
 import RequestProgress from "./RequestProgress";
-import styles from "./ApproveRequest.module.css";
+import styles from "./RequestDetail.module.css";
 
 const { TextArea } = Input;
 
@@ -70,11 +69,12 @@ export default function ApproveRequest() {
     }
   };
 
+  // ⭐ DUYỆT — KHÔNG TRỪ KHO (YC mua để BỔ SUNG kho)
   const handleApprove = async () => {
     try {
       setSubmitting(true);
       await purchaseRequestService.approve(id, currentUser.id);
-      toast.success("Đã duyệt và trừ tồn kho!");
+      toast.success("Đã duyệt yêu cầu mua hàng!");
       fetchRequest();
     } catch (error) {
       toast.error(error.message, { autoClose: 8000 });
@@ -102,17 +102,45 @@ export default function ApproveRequest() {
     }
   };
 
-  const checkStock = () => {
+  // ⭐ CHECK CHỖ CHỨA — không phải tồn kho
+  const capacityCheck = useMemo(() => {
     if (!request?.items) return { ok: true, errors: [] };
-    const errors = request.items
-      .filter((item) => item.material.current_stock < item.quantity)
-      .map(
-        (item) =>
-          `"${item.material.name}": kho còn ${item.material.current_stock} / cần ${item.quantity}`,
-      );
-    return { ok: errors.length === 0, errors };
-  };
 
+    const errors = request.items
+      .filter((item) => {
+        const max = Number(item.material?.max_stock || 0);
+        const current = Number(item.material?.current_stock || 0);
+        if (max === 0) return false;
+        return current + Number(item.quantity || 0) > max;
+      })
+      .map((item) => {
+        const max = Number(item.material?.max_stock || 0);
+        const current = Number(item.material?.current_stock || 0);
+        const available = Math.max(0, max - current);
+        return `"${item.material.name}": tồn ${current} + nhập ${item.quantity} = ${
+          current + Number(item.quantity || 0)
+        } (max ${max}, còn chỗ ${available})`;
+      });
+
+    return { ok: errors.length === 0, errors };
+  }, [request]);
+
+  // ⭐ Tổng tiền
+  const totalAmount = useMemo(() => {
+    if (!request?.items) return 0;
+    return request.items.reduce((sum, item) => {
+      const price = Number(item.price || 0);
+      const qty = Number(item.quantity || 0);
+      return sum + price * qty;
+    }, 0);
+  }, [request]);
+
+  const hasPrice = useMemo(() => {
+    if (!request?.items) return false;
+    return request.items.some((item) => Number(item.price || 0) > 0);
+  }, [request]);
+
+  // Loading
   if (loading) {
     return (
       <div className={styles.loading}>
@@ -121,251 +149,351 @@ export default function ApproveRequest() {
     );
   }
 
-  if (!request) return <div>Không tìm thấy yêu cầu!</div>;
+  // Không tìm thấy
+  if (!request) {
+    return (
+      <div className={styles.page}>
+        <Alert
+          message="Không tìm thấy yêu cầu!"
+          description="Yêu cầu này có thể đã bị xóa hoặc không tồn tại."
+          type="error"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+        <Button
+          icon={<ArrowLeftOutlined />}
+          onClick={() => navigate("/dashboard/purchase-requests/list")}
+        >
+          Quay lại danh sách
+        </Button>
+      </div>
+    );
+  }
 
   const status = statusLabels[request.status] || statusLabels.DRAFT;
-  const stockCheck = checkStock();
   const isPending = request.status === "PENDING";
+  const isApproved = request.status === "APPROVED";
+  const isRejected = request.status === "REJECTED";
 
-  // ==================== TABLE VẬT TƯ ====================
+  // ==================== CỘT BẢNG VẬT TƯ ====================
   const itemColumns = [
     {
       title: "STT",
-      width: 70,
+      width: 60,
       align: "center",
       render: (_, __, i) => i + 1,
     },
     {
-      title: "Mã vật tư",
+      title: "Mã VT",
       dataIndex: ["material", "code"],
-      width: 120,
-      render: (v) => <strong className={styles.codeText}>{v}</strong>,
+      width: 110,
+      render: (v) => <strong className={styles.materialCode}>{v}</strong>,
     },
     {
       title: "Tên vật tư",
       dataIndex: ["material", "name"],
-      render: (v) => <span className={styles.nameText}>{v}</span>,
+      render: (v) => <span className={styles.materialName}>{v}</span>,
     },
     {
       title: "ĐVT",
       dataIndex: ["material", "unit"],
-      width: 90,
+      width: 80,
       align: "center",
       render: (u) => <Tag>{u}</Tag>,
     },
     {
-      title: "SL yêu cầu",
+      title: "Số lượng",
       dataIndex: "quantity",
-      width: 120,
-      align: "center",
-      render: (q) => (
-        <strong style={{ fontSize: 15, color: "#1677ff" }}>{q}</strong>
-      ),
+      width: 90,
+      align: "right",
+      render: (q) => <strong>{Number(q || 0).toLocaleString("vi-VN")}</strong>,
     },
     {
-      title: "Tồn kho",
-      dataIndex: ["material", "current_stock"],
-      width: 120,
-      align: "center",
-      render: (stock, record) => {
-        const isLow = stock < record.quantity;
+      title: "Đơn giá",
+      dataIndex: "price",
+      width: 130,
+      align: "right",
+      render: (price) => {
+        const p = Number(price || 0);
+        if (!p) return <span style={{ color: "#bfbfbf" }}>—</span>;
         return (
-          <span
-            style={{
-              color: isLow ? "#ef4444" : "#16a34a",
-              fontWeight: 700,
-            }}
-          >
-            {stock}
+          <span style={{ color: "#595959" }}>
+            {p.toLocaleString("vi-VN")} đ
           </span>
         );
       },
     },
     {
-      title: "Sau khi duyệt",
-      width: 140,
-      align: "center",
+      title: "Thành tiền",
+      key: "total",
+      width: 150,
+      align: "right",
       render: (_, record) => {
-        const remaining = record.material.current_stock - record.quantity;
+        const price = Number(record.price || 0);
+        const qty = Number(record.quantity || 0);
+        const total = price * qty;
+        if (!price) return <span style={{ color: "#bfbfbf" }}>—</span>;
+        return (
+          <strong style={{ color: "#1677ff" }}>
+            {total.toLocaleString("vi-VN")} đ
+          </strong>
+        );
+      },
+    },
+    {
+      title: "Tồn kho",
+      dataIndex: ["material", "current_stock"],
+      width: 100,
+      align: "right",
+      render: (stock) => (
+        <span style={{ color: "#595959" }}>
+          {Number(stock || 0).toLocaleString("vi-VN")}
+        </span>
+      ),
+    },
+    {
+      title: "Còn chỗ",
+      key: "available_space",
+      width: 90,
+      align: "right",
+      render: (_, record) => {
+        const max = Number(record.material?.max_stock || 0);
+        const current = Number(record.material?.current_stock || 0);
+
+        if (max === 0) {
+          return (
+            <Tooltip title="Không giới hạn">
+              <span
+                style={{
+                  color: "#8c8c8c",
+                  fontSize: 16,
+                  fontWeight: 600,
+                  cursor: "help",
+                }}
+              >
+                ∞
+              </span>
+            </Tooltip>
+          );
+        }
+
+        const available = Math.max(0, max - current);
         return (
           <span
             style={{
-              color: remaining < 0 ? "#ef4444" : "#64748b",
+              color: available > 0 ? "#16a34a" : "#ef4444",
               fontWeight: 600,
             }}
           >
-            {remaining < 0 ? "Âm" : remaining}
+            {available.toLocaleString("vi-VN")}
           </span>
         );
       },
     },
   ];
 
-  // ==================== INFO ITEMS ====================
-  const infoItems = [
-    request.supplier?.name && {
-      icon: <ShopOutlined />,
-      label: "Nhà cung cấp",
-      value: request.supplier.name,
-      subValue: request.supplier.tax_code
-        ? `MST: ${request.supplier.tax_code}`
-        : null,
-      highlight: "blue",
-      // ⭐ LINK tới trang chi tiết NCC — dùng ID
-      link: {
-        text: "Xem thông tin nhà cung cấp",
-        onClick: () => navigate(`/dashboard/suppliers/${request.supplier.id}`),
-      },
-    },
-    request.request_date && {
-      icon: <CalendarOutlined />,
-      label: "Ngày yêu cầu",
-      value: dayjs(request.request_date).format("DD/MM/YYYY"),
-    },
-    request.expected_date && {
-      icon: <ClockCircleOutlined />,
-      label: "Ngày dự kiến cần",
-      value: dayjs(request.expected_date).format("DD/MM/YYYY"),
-    },
-    request.status && {
-      icon: <FileTextOutlined />,
-      label: "Trạng thái",
-      value: status.text,
-      highlight:
-        request.status === "APPROVED"
-          ? "green"
-          : request.status === "REJECTED"
-            ? "red"
-            : request.status === "PENDING"
-              ? "orange"
-              : "gray",
-    },
-    request.creator?.name && {
-      icon: <TeamOutlined />,
-      label: "Người tạo",
-      value: request.creator.name,
-    },
-    request.department && {
-      icon: <ShopOutlined />,
-      label: "Đơn vị sử dụng",
-      value: request.department,
-    },
-    request.reason && {
-      icon: <FileTextOutlined />,
-      label: "Lý do mua sắm",
-      value: request.reason,
-    },
-  ].filter(Boolean);
+  // ⭐ Summary row
+  const renderSummary = () => {
+    if (!hasPrice) return null;
+    const totalCols = itemColumns.length;
+
+    return (
+      <Table.Summary fixed>
+        <Table.Summary.Row className={styles.summaryRow}>
+          <Table.Summary.Cell index={0} colSpan={totalCols}>
+            <div className={styles.summaryInner}>
+              <span className={styles.summaryLabel}>Tổng cộng: </span>
+              <span className={styles.summaryValue}>
+                {totalAmount.toLocaleString("vi-VN")} đ
+              </span>
+            </div>
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      </Table.Summary>
+    );
+  };
 
   return (
     <div className={styles.page}>
-      {/* ==================== BREADCRUMB ==================== */}
-  
-
-      {/* ==================== PAGE HEADER ==================== */}
-      <div className={styles.pageHeader}>
-        <div className={styles.pageHeaderLeft}>
+      {/* HEADER */}
+      <div className={styles.header}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: "100%",
+          }}
+        >
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/dashboard/purchase-requests/list")}
-            type="text"
             className={styles.backBtn}
           >
             Quay lại
           </Button>
+
+          {/* <Space>
+            <Button icon={<PrinterOutlined />}>In</Button>
+            <Button icon={<MoreOutlined />} />
+          </Space> */}
         </div>
-
-        <Space>
-          <Button icon={<PrinterOutlined />}>In</Button>
-          <Button icon={<MoreOutlined />} />
-        </Space>
       </div>
 
-      {/* ==================== TITLE + STATUS ==================== */}
-      <div className={styles.titleBlock}>
-        <h1 className={styles.pageTitle}>Duyệt yêu cầu {request.code}</h1>
-        <Tag color={status.color} className={styles.statusBadge}>
-          {status.text}
-        </Tag>
-      </div>
-
-      {/* ==================== TIẾN TRÌNH ==================== */}
+      {/* THANH TIẾN TRÌNH */}
       <RequestProgress status={request.status} />
 
-      {/* ==================== INFO CARD ==================== */}
-      <Card className={styles.infoCard} bordered={false}>
-        <div className={styles.infoGrid}>
-          {infoItems.map((item, idx) => (
-            <div key={idx} className={styles.infoItem}>
-              <div className={styles.infoLabel}>
-                <span className={styles.infoLabelIcon}>{item.icon}</span>
-                {item.label}
-              </div>
-              <div
-                className={`${styles.infoValue} ${
-                  item.highlight === "blue"
-                    ? styles.valueBlue
-                    : item.highlight === "green"
-                      ? styles.valueGreen
-                      : item.highlight === "orange"
-                        ? styles.valueOrange
-                        : item.highlight === "red"
-                          ? styles.valueRed
-                          : ""
-                }`}
-              >
-                {item.value}
-              </div>
-              {item.subValue && (
-                <div className={styles.infoSub}>{item.subValue}</div>
-              )}
-
-              {/* ⭐ LINK */}
-              {item.link && (
-                <button
-                  type="button"
-                  className={styles.infoLink}
-                  onClick={item.link.onClick}
-                >
-                  {item.link.text}
-                  <span className={styles.infoLinkArrow}>→</span>
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* ==================== ALERTS ==================== */}
-      {isPending && !stockCheck.ok && (
+      {/* THÔNG BÁO TRẠNG THÁI */}
+      {isApproved && (
         <Alert
-          message="Không đủ tồn kho để duyệt!"
+          message="Yêu cầu đã được duyệt"
+          description=""
+          type="success"
+          showIcon
+          icon={<CheckCircleOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {isRejected && (
+        <Alert
+          message="Yêu cầu đã bị từ chối"
+          description={request.note || "Không có lý do cụ thể."}
+          type="error"
+          showIcon
+          icon={<CloseCircleOutlined />}
+          style={{ marginBottom: 16 }}
+        />
+      )}
+
+      {/* ⭐ CẢNH BÁO CHỖ CHỨA */}
+      {isPending && !capacityCheck.ok && (
+        <Alert
+          message="Vượt chỗ chứa — Không thể duyệt!"
           description={
-            <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
-              {stockCheck.errors.map((err, i) => (
-                <li key={i}>{err}</li>
-              ))}
-            </ul>
+            <div>
+              <p style={{ marginBottom: 8 }}>
+                Sau khi nhập hàng, một số vật tư sẽ vượt quá sức chứa
+                (max_stock):
+              </p>
+              <ul style={{ margin: "0", paddingLeft: 20 }}>
+                {capacityCheck.errors.map((err, i) => (
+                  <li key={i}>{err}</li>
+                ))}
+              </ul>
+              <p style={{ marginTop: 8, color: "#faad14", fontWeight: 600 }}>
+                💡 Vui lòng giảm số lượng hoặc chọn NCC khác.
+              </p>
+            </div>
           }
           type="error"
           showIcon
           icon={<WarningOutlined />}
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 16 }}
         />
       )}
 
-      {isPending && stockCheck.ok && (
-        <Alert
-          message="Đủ tồn kho — Có thể duyệt"
-          description="Khi duyệt, hệ thống sẽ tự động trừ tồn kho."
-          type="success"
-          showIcon
-          icon={<CheckCircleOutlined />}
-          style={{ marginBottom: 20 }}
-        />
-      )}
+      {/* THÔNG TIN CHUNG */}
+      <Card
+        title={
+          <span className={styles.sectionTitle}>
+            <FileTextOutlined className={styles.sectionIcon} />
+            Thông tin chung
+          </span>
+        }
+        className={styles.card}
+        bordered={false}
+      >
+        <Descriptions
+          column={{ xs: 1, sm: 2 }}
+          bordered
+          size="middle"
+          labelStyle={{
+            width: 180,
+            background: "#f8fafc",
+            fontWeight: 600,
+          }}
+        >
+          <Descriptions.Item label="Mã yêu cầu">
+            <strong>{request.code}</strong>
+          </Descriptions.Item>
+          <Descriptions.Item label="Trạng thái">
+            <Tag color={status.color}>{status.text}</Tag>
+          </Descriptions.Item>
 
-      {/* ==================== BẢNG VẬT TƯ ==================== */}
+          <Descriptions.Item label="Đơn vị sử dụng">
+            {request.department}
+          </Descriptions.Item>
+          <Descriptions.Item label="Lý do mua sắm">
+            {request.reason}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Ngày yêu cầu">
+            {dayjs(request.request_date).format("DD/MM/YYYY")}
+          </Descriptions.Item>
+          <Descriptions.Item label="Ngày dự kiến cần">
+            {dayjs(request.expected_date).format("DD/MM/YYYY")}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Nhà cung cấp">
+            {request.supplier?.name ? (
+              <span>
+                <a
+                  onClick={() =>
+                    navigate(`/dashboard/suppliers/${request.supplier.id}`)
+                  }
+                  style={{
+                    color: "#1677ff",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  {request.supplier.name}
+                </a>
+                {request.supplier.tax_code && (
+                  <span style={{ color: "#94a3b8", fontSize: 12 }}>
+                    {" "}
+                    ({request.supplier.tax_code})
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span style={{ color: "#94a3b8" }}>Chưa chọn</span>
+            )}
+          </Descriptions.Item>
+
+          <Descriptions.Item label="Người tạo">
+            {request.creator?.name || "—"}
+          </Descriptions.Item>
+
+          {request.approver && (
+            <Descriptions.Item label="Người duyệt">
+              {request.approver.name}
+            </Descriptions.Item>
+          )}
+          {request.approved_at && (
+            <Descriptions.Item label="Ngày duyệt">
+              {dayjs(request.approved_at).format("DD/MM/YYYY HH:mm")}
+            </Descriptions.Item>
+          )}
+
+          {hasPrice && (
+            <Descriptions.Item label="Tổng chi phí dự kiến" span={2}>
+              <span style={{ color: "#1677ff", fontWeight: 700, fontSize: 15 }}>
+                {totalAmount.toLocaleString("vi-VN")} đ
+              </span>
+            </Descriptions.Item>
+          )}
+
+          {request.note && (
+            <Descriptions.Item label="Ghi chú" span={2}>
+              {request.note}
+            </Descriptions.Item>
+          )}
+        </Descriptions>
+      </Card>
+
+      {/* DANH SÁCH VẬT TƯ */}
       <Card
         title={
           <span className={styles.sectionTitle}>
@@ -373,7 +501,7 @@ export default function ApproveRequest() {
             Danh sách vật tư ({request.items?.length || 0})
           </span>
         }
-        className={styles.tableCard}
+        className={styles.card}
         bordered={false}
       >
         <Table
@@ -382,33 +510,15 @@ export default function ApproveRequest() {
           rowKey="id"
           pagination={false}
           size="middle"
-          scroll={{ x: 900 }}
           locale={{ emptyText: "Không có vật tư nào" }}
+          className={styles.mainTable}
+          summary={renderSummary}
         />
       </Card>
 
-      {/* ==================== NOTE ==================== */}
-      {request.note && (
-        <Card className={styles.noteCard} bordered={false}>
-          <div className={styles.noteHeader}>
-            <FileTextOutlined className={styles.noteIcon} />
-            <span className={styles.noteLabel}>Ghi chú</span>
-          </div>
-          <div className={styles.noteContent}>{request.note}</div>
-        </Card>
-      )}
-
-      {/* ==================== FOOTER ==================== */}
-      <div className={styles.footer}>
-        <Button
-          icon={<ArrowLeftOutlined />}
-          onClick={() => navigate("/dashboard/purchase-requests/list")}
-          size="large"
-        >
-          Quay lại danh sách
-        </Button>
-
-        {isPending && (
+      {/* FOOTER */}
+      {isPending && (
+        <div className={styles.footer}>
           <Space>
             <Button
               danger
@@ -425,15 +535,15 @@ export default function ApproveRequest() {
               icon={<CheckOutlined />}
               onClick={handleApprove}
               loading={submitting}
-              disabled={!stockCheck.ok}
+              disabled={!capacityCheck.ok}
             >
-              {stockCheck.ok ? "Duyệt" : "Không đủ tồn kho"}
+              {capacityCheck.ok ? "Duyệt yêu cầu" : "Vượt chỗ chứa"}
             </Button>
           </Space>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* ==================== REJECT MODAL ==================== */}
+      {/* REJECT MODAL */}
       <Modal
         title="Từ chối yêu cầu"
         open={isRejectModalOpen}
@@ -451,7 +561,7 @@ export default function ApproveRequest() {
           rows={4}
           value={rejectReason}
           onChange={(e) => setRejectReason(e.target.value)}
-          placeholder="VD: Đã có sẵn trong kho..."
+          placeholder="VD: Vượt ngân sách, NCC không đủ uy tín..."
         />
       </Modal>
     </div>

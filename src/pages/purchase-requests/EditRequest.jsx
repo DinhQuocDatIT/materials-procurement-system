@@ -11,9 +11,9 @@ import {
   Modal,
   Row,
   Col,
-  Tag,
   Empty,
   Tooltip,
+  Alert,
   Spin,
 } from "antd";
 import {
@@ -26,19 +26,18 @@ import {
   FileTextOutlined,
   ShoppingOutlined,
   TeamOutlined,
-  SwapOutlined,
   CloseOutlined,
   CheckOutlined,
   InboxOutlined,
   WarningOutlined,
   ExclamationCircleOutlined,
+  StarFilled,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
 import dayjs from "dayjs";
 
 import { materialService } from "../../services/materialService";
-import { supplierService } from "../../services/supplierService";
 import { purchaseRequestService } from "../../services/purchaseRequestService";
 import AuthStorage from "../../services/AuthStorage";
 
@@ -70,20 +69,8 @@ const supplierStatusLabels = {
   POOR: { text: "Hạn chế", className: "statusPoor" },
 };
 
-const rankLabels = { A: "A", B: "B", C: "C" };
-
-const getSupplierRank = (supplier) => {
-  if (supplier?.rank) return supplier.rank;
-  const rating = Number(supplier?.rating || 0);
-  if (rating >= 4.5) return "A";
-  if (rating >= 3.5) return "B";
-  return "C";
-};
-
-const getSupplierStatus = (supplier) => supplier?.status || "AVERAGE";
-
 const getSupplierStatusInfo = (supplier) => {
-  const status = getSupplierStatus(supplier);
+  const status = supplier?.status || "AVERAGE";
   return (
     supplierStatusLabels[status] || {
       text: status,
@@ -100,20 +87,22 @@ const EditRequest = () => {
   const [form] = Form.useForm();
 
   const [materials, setMaterials] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [requestItems, setRequestItems] = useState([]);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
-  // Modal
+  const [requestItems, setRequestItems] = useState([]);
+
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialSearch, setMaterialSearch] = useState("");
+
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [supplierSearch, setSupplierSearch] = useState("");
-  const [supplierField, setSupplierField] = useState(undefined);
-  const [supplierRank, setSupplierRank] = useState(undefined);
-  const [supplierStatus, setSupplierStatus] = useState(undefined);
+  const [supplierOptions, setSupplierOptions] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [priceMap, setPriceMap] = useState({});
+  const [expectedDateError, setExpectedDateError] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -123,16 +112,14 @@ const EditRequest = () => {
     try {
       setLoading(true);
 
-      const [materialRes, supplierRes, requestData] = await Promise.all([
+      const [materialRes, requestData] = await Promise.all([
         materialService.getAll(),
-        supplierService.getAll(),
         purchaseRequestService.getById(id),
       ]);
 
       setMaterials(materialRes?.data || materialRes || []);
-      setSuppliers(supplierRes?.data || supplierRes || []);
 
-      // Check status
+      // Check trạng thái — chỉ sửa được DRAFT
       if (requestData.status !== "DRAFT") {
         toast.error("Chỉ sửa được yêu cầu ở trạng thái Nháp!");
         navigate("/dashboard/purchase-requests/list");
@@ -163,12 +150,24 @@ const EditRequest = () => {
         unit: item.material?.unit,
         quantity: item.quantity,
         stock_quantity: item.material?.current_stock ?? 0,
+        max_stock: item.material?.max_stock ?? 0,
+        min_stock: item.material?.min_stock ?? 0,
       }));
       setRequestItems(items);
 
-      // Fill supplier
+      // Fill supplier + load price map
       if (requestData.supplier) {
         setSelectedSupplier(requestData.supplier);
+
+        try {
+          const prices = await materialService.getPricesBySupplier(
+            requestData.supplier.id,
+          );
+          setPriceMap(prices);
+        } catch (priceError) {
+          console.error("Lỗi load giá:", priceError);
+          setPriceMap({});
+        }
       }
     } catch (error) {
       console.error(error);
@@ -194,12 +193,15 @@ const EditRequest = () => {
       return;
     }
 
-    const stockQty =
-      material.current_stock ??
-      material.stock_quantity ??
-      material.stock ??
-      material.quantity ??
-      0;
+    const stockQty = material.current_stock ?? 0;
+    const maxStock = material.max_stock ?? 0;
+
+    if (maxStock > 0 && stockQty >= maxStock) {
+      toast.warning(
+        `"${material.name}" đã đầy chỗ (${stockQty}/${maxStock}). Không thể nhập thêm!`,
+      );
+      return;
+    }
 
     const newItem = {
       key: material.id,
@@ -209,14 +211,19 @@ const EditRequest = () => {
       unit: material.unit,
       quantity: 1,
       stock_quantity: stockQty,
+      min_stock: material.min_stock ?? 0,
+      max_stock: maxStock,
     };
 
     setRequestItems((prev) => [...prev, newItem]);
     setIsMaterialModalOpen(false);
     setMaterialSearch("");
 
-    if (stockQty === 0) {
-      toast.warning(`"${material.name}" đã hết hàng trong kho!`);
+    if (selectedSupplier) {
+      setSelectedSupplier(null);
+      form.setFieldValue("supplier_id", null);
+      setPriceMap({});
+      toast.info("Đã thêm vật tư mới, vui lòng chọn lại nhà cung cấp");
     } else {
       toast.success("Đã thêm vật tư");
     }
@@ -224,7 +231,6 @@ const EditRequest = () => {
 
   const handleQuantityChange = (materialId, value) => {
     const safeValue = Math.max(1, Math.floor(Number(value) || 1));
-
     setRequestItems((prev) =>
       prev.map((item) =>
         item.material_id === materialId
@@ -238,6 +244,12 @@ const EditRequest = () => {
     setRequestItems((prev) =>
       prev.filter((item) => item.material_id !== materialId),
     );
+
+    if (selectedSupplier) {
+      setSelectedSupplier(null);
+      form.setFieldValue("supplier_id", null);
+      setPriceMap({});
+    }
   };
 
   const filteredMaterials = useMemo(() => {
@@ -251,63 +263,172 @@ const EditRequest = () => {
     });
   }, [materials, materialSearch]);
 
+  const overMaxItems = useMemo(() => {
+    return requestItems.filter((item) => {
+      const max = Number(item.max_stock || 0);
+      const current = Number(item.stock_quantity || 0);
+      if (max === 0) return false;
+      return current + item.quantity > max;
+    });
+  }, [requestItems]);
+
+  const totalAmount = useMemo(() => {
+    return requestItems.reduce((sum, item) => {
+      const price = priceMap[item.material_id] || 0;
+      return sum + price * item.quantity;
+    }, 0);
+  }, [requestItems, priceMap]);
+
+  const hasPrice = Object.keys(priceMap).length > 0;
+
   // =========================
   // SUPPLIER
   // =========================
 
-  const openSupplierModal = () => {
+  const openSupplierModal = async () => {
+    if (requestItems.length === 0) {
+      toast.warning("Vui lòng thêm vật tư trước!");
+      return;
+    }
+
     setSupplierSearch("");
-    setSupplierField(undefined);
-    setSupplierRank(undefined);
-    setSupplierStatus(undefined);
     setIsSupplierModalOpen(true);
+    setLoadingSuppliers(true);
+
+    try {
+      const materialIds = requestItems.map((i) => i.material_id);
+      const data = await materialService.findSuppliersForMaterials(materialIds);
+      setSupplierOptions(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Lỗi tải danh sách NCC: " + error.message);
+      setSupplierOptions([]);
+    } finally {
+      setLoadingSuppliers(false);
+    }
   };
 
-  const handleSelectSupplier = (supplier) => {
-    if (!supplier) return;
+  const filteredSuppliers = useMemo(() => {
+    const keyword = supplierSearch.trim().toLowerCase();
+    if (!keyword) return supplierOptions;
 
-    setSelectedSupplier(supplier);
-    form.setFieldValue("supplier_id", supplier.id);
-    setIsSupplierModalOpen(false);
-    toast.success(`Đã chọn nhà cung cấp "${supplier.name}"`);
+    return supplierOptions.filter((opt) => {
+      const name = String(opt.supplier?.name || "").toLowerCase();
+      const taxCode = String(opt.supplier?.tax_code || "").toLowerCase();
+      return name.includes(keyword) || taxCode.includes(keyword);
+    });
+  }, [supplierOptions, supplierSearch]);
+
+  const handleSelectSupplier = async (option) => {
+    const { supplier, missingMaterialIds, matchedCount, totalCount } = option;
+
+    const applySupplier = async () => {
+      setSelectedSupplier(supplier);
+      form.setFieldValue("supplier_id", supplier.id);
+      setIsSupplierModalOpen(false);
+
+      try {
+        const prices = await materialService.getPricesBySupplier(supplier.id);
+        setPriceMap(prices);
+      } catch (error) {
+        console.error(error);
+        setPriceMap({});
+      }
+
+      toast.success(`Đã chọn NCC "${supplier.name}"`);
+    };
+
+    if (missingMaterialIds.length > 0) {
+      const missingNames = requestItems
+        .filter((i) => missingMaterialIds.includes(i.material_id))
+        .map((i) => i.material_name)
+        .join(", ");
+
+      Modal.confirm({
+        title: "Nhà cung cấp không có đủ vật tư",
+        icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
+        content: (
+          <div>
+            <p>
+              <strong>{supplier.name}</strong> chỉ cung cấp{" "}
+              <strong>
+                {matchedCount}/{totalCount}
+              </strong>{" "}
+              vật tư.
+            </p>
+            <p style={{ marginTop: 8 }}>Vật tư KHÔNG có:</p>
+            <ul style={{ marginTop: 4, paddingLeft: 20, color: "#ef4444" }}>
+              {requestItems
+                .filter((i) => missingMaterialIds.includes(i.material_id))
+                .map((i) => (
+                  <li key={i.material_id}>
+                    {i.material_code} — {i.material_name}
+                  </li>
+                ))}
+            </ul>
+            <p style={{ marginTop: 12, color: "#faad14", fontWeight: 600 }}>
+              ⚠️ {missingNames} sẽ bị XÓA khỏi yêu cầu.
+            </p>
+          </div>
+        ),
+        okText: "Xác nhận & Xóa",
+        cancelText: "Hủy",
+        okButtonProps: { danger: true },
+        onOk: async () => {
+          setRequestItems((prev) =>
+            prev.filter((i) => !missingMaterialIds.includes(i.material_id)),
+          );
+          await applySupplier();
+        },
+      });
+    } else {
+      await applySupplier();
+    }
   };
 
   const handleClearSupplier = () => {
     setSelectedSupplier(null);
     form.setFieldValue("supplier_id", null);
+    setPriceMap({});
   };
 
-  const handleResetSupplierFilters = () => {
-    setSupplierSearch("");
-    setSupplierField(undefined);
-    setSupplierRank(undefined);
-    setSupplierStatus(undefined);
+  // =========================
+  // NGÀY
+  // =========================
+
+  const checkExpectedDate = (date) => {
+    if (!date) return { ok: true, msg: "" };
+
+    const today = dayjs().startOf("day");
+
+    if (date.isBefore(today, "day")) {
+      return { ok: false, msg: "Ngày cần hàng không được ở quá khứ!" };
+    }
+
+    const requestDate = form.getFieldValue("request_date");
+    if (requestDate && date.isBefore(requestDate, "day")) {
+      return {
+        ok: false,
+        msg: "Ngày cần hàng phải sau hoặc bằng Ngày yêu cầu!",
+      };
+    }
+
+    return { ok: true, msg: "" };
   };
 
-  const filteredSuppliers = useMemo(() => {
-    const keyword = supplierSearch.trim().toLowerCase();
-
-    return suppliers.filter((supplier) => {
-      const name = String(supplier?.name || "").toLowerCase();
-      const taxCode = String(supplier?.tax_code || "").toLowerCase();
-      const field = String(supplier?.field || "").toLowerCase();
-
-      const matchesSearch =
-        !keyword ||
-        name.includes(keyword) ||
-        taxCode.includes(keyword) ||
-        field.includes(keyword);
-
-      const rank = getSupplierRank(supplier);
-      const status = getSupplierStatus(supplier);
-
-      const matchesField = !supplierField || supplier?.field === supplierField;
-      const matchesRank = !supplierRank || rank === supplierRank;
-      const matchesStatus = !supplierStatus || status === supplierStatus;
-
-      return matchesSearch && matchesField && matchesRank && matchesStatus;
-    });
-  }, [suppliers, supplierSearch, supplierField, supplierRank, supplierStatus]);
+  const handleExpectedDateChange = (date) => {
+    if (!date) {
+      setExpectedDateError("");
+      return;
+    }
+    const check = checkExpectedDate(date);
+    if (!check.ok) {
+      setExpectedDateError(check.msg);
+      form.setFieldValue("expected_date", null);
+    } else {
+      setExpectedDateError("");
+    }
+  };
 
   // =========================
   // SAVE
@@ -336,20 +457,17 @@ const EditRequest = () => {
         return;
       }
 
-      const overStock = requestItems.filter(
-        (item) => item.quantity > item.stock_quantity,
-      );
-      if (overStock.length > 0) {
-        const totalShortage = overStock.reduce(
-          (sum, item) => sum + (item.quantity - item.stock_quantity),
-          0,
-        );
-        toast.info(
-          `Có ${overStock.length} vật tư vượt tồn kho (thiếu ${totalShortage.toLocaleString(
-            "vi-VN",
-          )} đơn vị).`,
-          { autoClose: 5000 },
-        );
+      const dateCheck = checkExpectedDate(values.expected_date);
+      if (!dateCheck.ok) {
+        setExpectedDateError(dateCheck.msg);
+        toast.error(dateCheck.msg);
+        return;
+      }
+
+      if (overMaxItems.length > 0) {
+        const names = overMaxItems.map((i) => i.material_name).join(", ");
+        toast.error(`Vật tư vượt chỗ chứa: ${names}. Vui lòng giảm số lượng!`);
+        return;
       }
 
       if (status === "PENDING" && !values.supplier_id) {
@@ -357,16 +475,13 @@ const EditRequest = () => {
         return;
       }
 
-      // Confirm khi GỬI DUYỆT
       if (status === "PENDING") {
         Modal.confirm({
           title: "Xác nhận gửi yêu cầu mua hàng?",
           icon: <ExclamationCircleOutlined style={{ color: "#faad14" }} />,
           content: (
             <div>
-              <p>
-                Bạn có chắc chắn muốn <strong>GỬI YÊU CẦU</strong> này không?
-              </p>
+              <p>Bạn có chắc chắn muốn GỬI YÊU CẦU này không?</p>
               <ul style={{ marginTop: 8, paddingLeft: 20 }}>
                 <li>
                   <strong>Số vật tư:</strong> {requestItems.length}
@@ -379,23 +494,17 @@ const EditRequest = () => {
                   <strong>Ngày cần hàng:</strong>{" "}
                   {values.expected_date?.format("DD/MM/YYYY")}
                 </li>
+                {hasPrice && (
+                  <li>
+                    <strong>Tổng chi phí:</strong>{" "}
+                    {totalAmount.toLocaleString("vi-VN")} đ
+                  </li>
+                )}
               </ul>
-              <p
-                style={{
-                  color: "#faad14",
-                  fontWeight: 600,
-                  marginTop: 12,
-                }}
-              >
-                ⚠️ Sau khi gửi, yêu cầu sẽ chờ quản lý phê duyệt.
-              </p>
             </div>
           ),
           okText: "Xác nhận gửi",
           cancelText: "Hủy",
-          okButtonProps: {
-            style: { background: "#1677ff", borderColor: "#1677ff" },
-          },
           onOk: async () => {
             await doSave(status, values, currentUser);
           },
@@ -403,17 +512,13 @@ const EditRequest = () => {
         return;
       }
 
-      // Lưu nháp → lưu luôn
       await doSave(status, values, currentUser);
     } catch (error) {
       console.error(error);
-
       if (error?.errorFields) {
         toast.warning("Vui lòng kiểm tra lại các thông tin bắt buộc");
       } else {
-        toast.error(
-          error?.response?.data?.message || "Có lỗi xảy ra khi lưu yêu cầu",
-        );
+        toast.error("Có lỗi xảy ra khi lưu yêu cầu");
       }
     }
   };
@@ -424,12 +529,8 @@ const EditRequest = () => {
 
       const requestData = {
         code: values.code,
-        request_date: values.request_date
-          ? values.request_date.format("YYYY-MM-DD")
-          : null,
-        expected_date: values.expected_date
-          ? values.expected_date.format("YYYY-MM-DD")
-          : null,
+        request_date: values.request_date?.format("YYYY-MM-DD"),
+        expected_date: values.expected_date?.format("YYYY-MM-DD"),
         department: values.department,
         reason: values.reason,
         supplier_id: values.supplier_id || null,
@@ -438,8 +539,15 @@ const EditRequest = () => {
         status,
       };
 
-      // UPDATE thay vì CREATE
-      await purchaseRequestService.update(id, requestData, requestItems);
+      // ⭐ Map items kèm price
+      const itemsWithPrice = requestItems.map((item) => ({
+        material_id: item.material_id,
+        quantity: item.quantity,
+        price: Number(priceMap[item.material_id] || 0),
+      }));
+
+      // ⭐ GỌI UPDATE (không phải create)
+      await purchaseRequestService.update(id, requestData, itemsWithPrice);
 
       toast.success(
         status === "PENDING"
@@ -450,77 +558,119 @@ const EditRequest = () => {
       navigate("/dashboard/purchase-requests/list");
     } catch (error) {
       console.error(error);
-      toast.error(
-        error?.response?.data?.message || "Có lỗi xảy ra khi lưu yêu cầu",
-      );
+      toast.error("Có lỗi xảy ra khi lưu yêu cầu");
     } finally {
       setSubmitting(false);
     }
   };
 
   // =========================
-  // TABLE
+  // TABLE VẬT TƯ
   // =========================
 
   const materialColumns = [
     {
       title: "STT",
       key: "index",
-      width: 70,
+      width: 55,
       align: "center",
-      render: (_, __, index) => (
-        <span className={styles.indexNumber}>{index + 1}</span>
-      ),
+      render: (_, __, index) => index + 1,
     },
     {
-      title: "Mã vật tư",
+      title: "Mã VT",
       dataIndex: "material_code",
-      key: "material_code",
-      width: 150,
-      render: (value) => (
-        <span className={styles.materialCode}>{value || "-"}</span>
-      ),
+      width: 95,
+      render: (v) => <span className={styles.materialCode}>{v || "-"}</span>,
     },
     {
       title: "Tên vật tư",
       dataIndex: "material_name",
-      key: "material_name",
-      render: (value) => (
-        <span className={styles.materialName}>{value || "-"}</span>
-      ),
+      render: (v) => <span className={styles.materialName}>{v || "-"}</span>,
     },
     {
-      title: "Đơn vị",
+      title: "ĐVT",
       dataIndex: "unit",
-      key: "unit",
-      width: 100,
-      render: (value) => value || "-",
+      width: 70,
+      align: "center",
+      render: (v) => v || "-",
     },
     {
       title: "Tồn kho",
       dataIndex: "stock_quantity",
-      key: "stock_quantity",
-      width: 140,
+      width: 85,
       align: "right",
-      render: (value, record) => {
-        const isOver = record.quantity > value;
-        const shortage = isOver ? record.quantity - value : 0;
+      render: (value) => (
+        <span style={{ color: "#595959" }}>
+          {Number(value || 0).toLocaleString("vi-VN")}
+        </span>
+      ),
+    },
+    {
+      title: "Còn chỗ",
+      key: "available_space",
+      width: 90,
+      align: "right",
+      render: (_, record) => {
+        const max = Number(record.max_stock || 0);
+        const current = Number(record.stock_quantity || 0);
+
+        if (max === 0) {
+          return (
+            <span style={{ color: "#8c8c8c", fontSize: 12 }}>
+              Không giới hạn
+            </span>
+          );
+        }
+
+        const available = Math.max(0, max - current);
 
         return (
-          <div style={{ textAlign: "right", lineHeight: 1.3 }}>
-            <span className={styles.stockValue}>
-              {Number(value || 0).toLocaleString("vi-VN")}
-            </span>
-            {isOver && (
+          <span
+            style={{
+              color: available > 0 ? "#16a34a" : "#ef4444",
+              fontWeight: 600,
+            }}
+          >
+            {available.toLocaleString("vi-VN")}
+          </span>
+        );
+      },
+    },
+    {
+      title: "SL yêu cầu",
+      dataIndex: "quantity",
+      width: 110,
+      render: (_, record) => {
+        const max = Number(record.max_stock || 0);
+        const current = Number(record.stock_quantity || 0);
+        const available = max > 0 ? Math.max(0, max - current) : Infinity;
+        const isOverMax = max > 0 && record.quantity > available;
+
+        return (
+          <div style={{ lineHeight: 1.3 }}>
+            <InputNumber
+              min={1}
+              max={100000}
+              precision={0}
+              value={record.quantity}
+              onChange={(value) =>
+                handleQuantityChange(record.material_id, value)
+              }
+              size="small"
+              status={isOverMax ? "error" : ""}
+              style={{ width: "100%" }}
+            />
+            {isOverMax && (
               <div
                 style={{
-                  color: "#faad14",
-                  fontSize: 11,
+                  color: "#ef4444",
+                  fontSize: 10,
                   marginTop: 2,
                   fontWeight: 600,
                 }}
               >
-                <WarningOutlined /> Thiếu {shortage.toLocaleString("vi-VN")}
+                <WarningOutlined /> Vượt{" "}
+                {(record.quantity - available).toLocaleString("vi-VN")}
               </div>
             )}
           </div>
@@ -528,29 +678,52 @@ const EditRequest = () => {
       },
     },
     {
-      title: "Số lượng yêu cầu",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 170,
-      render: (_, record) => (
-        <InputNumber
-          min={1}
-          max={100000}
-          precision={0}
-          value={record.quantity}
-          onChange={(value) => handleQuantityChange(record.material_id, value)}
-          className={styles.quantityInput}
-          status={record.quantity > record.stock_quantity ? "warning" : ""}
-        />
-      ),
+      title: "Đơn giá",
+      key: "unit_price",
+      width: 120,
+      align: "right",
+      render: (_, record) => {
+        if (!selectedSupplier) {
+          return <span style={{ color: "#bfbfbf", fontSize: 12 }}>—</span>;
+        }
+        const price = priceMap[record.material_id];
+        if (!price) {
+          return (
+            <span style={{ color: "#faad14", fontSize: 12 }}>Chưa có giá</span>
+          );
+        }
+        return (
+          <span style={{ color: "#595959" }}>
+            {Number(price).toLocaleString("vi-VN")} đ
+          </span>
+        );
+      },
+    },
+    {
+      title: "Thành tiền",
+      key: "total_price",
+      width: 140,
+      align: "right",
+      render: (_, record) => {
+        const price = priceMap[record.material_id] || 0;
+        const total = price * record.quantity;
+        if (!price) {
+          return <span style={{ color: "#bfbfbf" }}>—</span>;
+        }
+        return (
+          <strong style={{ color: "#1677ff" }}>
+            {total.toLocaleString("vi-VN")} đ
+          </strong>
+        );
+      },
     },
     {
       title: "Thao tác",
       key: "action",
-      width: 90,
+      width: 70,
       align: "center",
       render: (_, record) => (
-        <Tooltip title="Xóa vật tư">
+        <Tooltip title="Xóa">
           <Button
             type="text"
             danger
@@ -562,117 +735,26 @@ const EditRequest = () => {
     },
   ];
 
-  const supplierColumns = [
-    {
-      title: "Nhà cung cấp",
-      key: "supplier",
-      width: 240,
-      render: (_, record) => (
-        <div className={styles.supplierTableName}>
-          <div className={styles.supplierTableAvatar}>
-            {String(record?.name || "?")
-              .trim()
-              .charAt(0)
-              .toUpperCase()}
-          </div>
-          <div className={styles.supplierTableInfo}>
-            <div className={styles.supplierTableTitle}>
-              {record?.name || "Chưa có tên"}
+  const renderSummary = () => {
+    if (!hasPrice) return null;
+
+    const totalCols = materialColumns.length;
+
+    return (
+      <Table.Summary fixed>
+        <Table.Summary.Row className={styles.summaryRow}>
+          <Table.Summary.Cell index={0} colSpan={totalCols}>
+            <div className={styles.summaryInner}>
+              <span className={styles.summaryLabel}>Tổng cộng: </span>
+              <span className={styles.summaryValue}>
+                {totalAmount.toLocaleString("vi-VN")} đ
+              </span>
             </div>
-            <div className={styles.supplierTaxCode}>
-              MST: {record?.tax_code || "Chưa cập nhật"}
-            </div>
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "Lĩnh vực",
-      dataIndex: "field",
-      key: "field",
-      width: 170,
-      render: (value) => (
-        <Tag className={styles.fieldTag}>{value || "Chưa cập nhật"}</Tag>
-      ),
-    },
-    {
-      title: "HĐ",
-      dataIndex: "contract_count",
-      key: "contract_count",
-      width: 70,
-      align: "center",
-      render: (value) => (
-        <span className={styles.contractCount}>
-          {Number(value || 0).toLocaleString("vi-VN")}
-        </span>
-      ),
-    },
-    {
-      title: "Đánh giá",
-      dataIndex: "rating",
-      key: "rating",
-      width: 100,
-      align: "center",
-      render: (value) => (
-        <div className={styles.ratingCell}>
-          <span className={styles.ratingStar}>★</span>
-          <span>{formatRating(value)}</span>
-        </div>
-      ),
-    },
-    {
-      title: "Hạng",
-      key: "rank",
-      width: 80,
-      align: "center",
-      render: (_, record) => {
-        const rank = getSupplierRank(record);
-        return (
-          <span
-            className={`${styles.rankBadge} ${styles[`rank${rank}`] || ""}`}
-          >
-            {rankLabels[rank] || rank}
-          </span>
-        );
-      },
-    },
-    {
-      title: "Trạng thái",
-      key: "status",
-      width: 130,
-      render: (_, record) => {
-        const statusInfo = getSupplierStatusInfo(record);
-        return (
-          <span
-            className={`${styles.statusBadge} ${
-              styles[statusInfo.className] || ""
-            }`}
-          >
-            {statusInfo.text}
-          </span>
-        );
-      },
-    },
-    {
-      title: "Thao tác",
-      key: "action",
-      width: 100,
-      align: "center",
-      render: (_, record) => (
-        <Button
-          type="primary"
-          size="small"
-          icon={<CheckOutlined />}
-          onClick={(event) => {
-            event.stopPropagation();
-            handleSelectSupplier(record);
-          }}
-        >
-          Chọn
-        </Button>
-      ),
-    },
-  ];
+          </Table.Summary.Cell>
+        </Table.Summary.Row>
+      </Table.Summary>
+    );
+  };
 
   if (loading) {
     return (
@@ -685,7 +767,6 @@ const EditRequest = () => {
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        {/* Breadcrumb */}
         <div className={styles.breadcrumb}>
           <Button
             type="text"
@@ -695,20 +776,6 @@ const EditRequest = () => {
           >
             Quay lại
           </Button>
-          
-        </div>
-
-        {/* Header */}
-        <div className={styles.pageHeader}>
-          <div className={styles.pageHeaderLeft}>
-            <div className={styles.pageHeaderIcon}>
-              <FileTextOutlined />
-            </div>
-            <div>
-              <h1>Sửa yêu cầu mua hàng</h1>
-              <p>Cập nhật thông tin yêu cầu</p>
-            </div>
-          </div>
         </div>
 
         <Form
@@ -717,7 +784,7 @@ const EditRequest = () => {
           requiredMark={false}
           className={styles.form}
         >
-          {/* THÔNG TIN */}
+          {/* THÔNG TIN YÊU CẦU */}
           <Card className={styles.card} bordered={false}>
             <div className={styles.cardHeader}>
               <div className={styles.cardHeaderIcon}>
@@ -746,7 +813,12 @@ const EditRequest = () => {
                 <Form.Item label="Ngày yêu cầu">
                   <DatePicker
                     format="DD/MM/YYYY"
-                    style={{ width: "100%" }}
+                    style={{
+                      width: "100%",
+                      background: "#f5f5f5",
+                      cursor: "not-allowed",
+                    }}
+                    value={dayjs()}
                     disabled
                   />
                   <Form.Item name="request_date" hidden noStyle>
@@ -755,44 +827,37 @@ const EditRequest = () => {
                 </Form.Item>
               </Col>
 
-              {/* ⭐ NGÀY CẦN HÀNG — VALIDATE CHUẨN */}
               <Col xs={24} md={8}>
-                <Form.Item
-                  label="Ngày cần hàng"
-                  name="expected_date"
-                  rules={[
-                    { required: true, message: "Vui lòng chọn ngày cần hàng" },
-                    {
-                      validator: (_, value) => {
-                        if (!value) return Promise.resolve();
-
-                        const today = dayjs().startOf("day");
-                        if (value.isBefore(today, "day")) {
-                          return Promise.reject(
-                            new Error("Ngày cần hàng không được ở quá khứ!"),
-                          );
-                        }
-
-                        const requestDate = form.getFieldValue("request_date");
-                        if (requestDate && value.isBefore(requestDate, "day")) {
-                          return Promise.reject(
-                            new Error(
-                              "Ngày cần hàng phải sau hoặc bằng Ngày yêu cầu!",
-                            ),
-                          );
-                        }
-
-                        return Promise.resolve();
+                <Form.Item label="Ngày cần hàng" required>
+                  <Form.Item
+                    name="expected_date"
+                    noStyle
+                    rules={[
+                      { required: true, message: "Vui lòng chọn ngày" },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.resolve();
+                          const today = dayjs().startOf("day");
+                          if (value.isBefore(today, "day")) {
+                            const msg = "Ngày cần hàng không được ở quá khứ!";
+                            setExpectedDateError(msg);
+                            return Promise.reject(new Error(msg));
+                          }
+                          setExpectedDateError("");
+                          return Promise.resolve();
+                        },
                       },
-                    },
-                  ]}
-                  validateTrigger={["onChange", "onBlur"]}
-                >
-                  <DatePicker
-                    format="DD/MM/YYYY"
-                    style={{ width: "100%" }}
-                    placeholder="Chọn ngày cần hàng"
-                  />
+                    ]}
+                    validateTrigger={["onChange", "onBlur"]}
+                  >
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      style={{ width: "100%" }}
+                      placeholder="Chọn ngày"
+                      onChange={handleExpectedDateChange}
+                      status={expectedDateError ? "error" : ""}
+                    />
+                  </Form.Item>
                 </Form.Item>
               </Col>
 
@@ -800,13 +865,13 @@ const EditRequest = () => {
                 <Form.Item
                   label="Đơn vị / Bộ phận"
                   name="department"
-                  rules={[{ required: true }]}
+                  rules={[{ required: true, message: "Chọn đơn vị" }]}
                 >
                   <Select
                     placeholder="Chọn đơn vị"
-                    options={departments.map((item) => ({
-                      value: item,
-                      label: item,
+                    options={departments.map((d) => ({
+                      value: d,
+                      label: d,
                     }))}
                   />
                 </Form.Item>
@@ -816,116 +881,18 @@ const EditRequest = () => {
                 <Form.Item
                   label="Lý do mua hàng"
                   name="reason"
-                  rules={[{ required: true }]}
+                  rules={[{ required: true, message: "Chọn lý do" }]}
                 >
                   <Select
                     placeholder="Chọn lý do"
-                    options={reasons.map((item) => ({
-                      value: item,
-                      label: item,
+                    options={reasons.map((r) => ({
+                      value: r,
+                      label: r,
                     }))}
                   />
                 </Form.Item>
               </Col>
             </Row>
-          </Card>
-
-          {/* NCC */}
-          <Card className={styles.card} bordered={false}>
-            <div className={styles.cardHeader}>
-              <div className={styles.cardHeaderIcon}>
-                <TeamOutlined />
-              </div>
-              <div>
-                <h2>Nhà cung cấp</h2>
-                <p>Chọn nhà cung cấp phù hợp</p>
-              </div>
-            </div>
-
-            <div className={styles.divider} />
-
-            <Form.Item name="supplier_id" hidden>
-              <Input />
-            </Form.Item>
-
-            {!selectedSupplier ? (
-              <button
-                type="button"
-                className={styles.supplierPicker}
-                onClick={openSupplierModal}
-              >
-                <div className={styles.supplierPickerIcon}>
-                  <TeamOutlined />
-                </div>
-                <div className={styles.supplierPickerContent}>
-                  <strong>Chọn nhà cung cấp</strong>
-                  <span>Xem danh sách NCC trước khi lựa chọn</span>
-                </div>
-                <SwapOutlined className={styles.supplierPickerArrow} />
-              </button>
-            ) : (
-              <div className={styles.selectedSupplier}>
-                <div className={styles.selectedSupplierMain}>
-                  <div className={styles.selectedSupplierAvatar}>
-                    {String(selectedSupplier?.name || "?")
-                      .trim()
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-                  <div className={styles.selectedSupplierInfo}>
-                    <div className={styles.selectedSupplierTitle}>
-                      {selectedSupplier?.name}
-                    </div>
-                    <div className={styles.selectedSupplierTax}>
-                      MST: {selectedSupplier?.tax_code || "Chưa cập nhật"}
-                    </div>
-                    <div className={styles.selectedSupplierMeta}>
-                      <span>
-                        {selectedSupplier?.field || "Chưa cập nhật lĩnh vực"}
-                      </span>
-                      <span className={styles.metaDot}>•</span>
-                      <span>
-                        {Number(
-                          selectedSupplier?.contract_count || 0,
-                        ).toLocaleString("vi-VN")}{" "}
-                        hợp đồng
-                      </span>
-                      <span className={styles.metaDot}>•</span>
-                      <span className={styles.selectedRating}>
-                        ★ {formatRating(selectedSupplier?.rating)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.selectedSupplierStatus}>
-                    {(() => {
-                      const statusInfo =
-                        getSupplierStatusInfo(selectedSupplier);
-                      return (
-                        <span
-                          className={`${styles.statusBadge} ${
-                            styles[statusInfo.className] || ""
-                          }`}
-                        >
-                          {statusInfo.text}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-                <div className={styles.selectedSupplierActions}>
-                  <Button icon={<SwapOutlined />} onClick={openSupplierModal}>
-                    Đổi NCC
-                  </Button>
-                  <Button
-                    danger
-                    icon={<CloseOutlined />}
-                    onClick={handleClearSupplier}
-                  >
-                    Xóa
-                  </Button>
-                </div>
-              </div>
-            )}
           </Card>
 
           {/* VẬT TƯ */}
@@ -936,8 +903,8 @@ const EditRequest = () => {
               </div>
               <div className={styles.cardHeaderContent}>
                 <div>
-                  <h2>Danh sách vật tư</h2>
-                  <p>Thêm các vật tư cần mua vào yêu cầu</p>
+                  <h2>1. Danh sách vật tư</h2>
+                  <p>Thêm vật tư cần mua vào yêu cầu</p>
                 </div>
                 <Button
                   type="primary"
@@ -950,6 +917,35 @@ const EditRequest = () => {
             </div>
 
             <div className={styles.divider} />
+
+            {overMaxItems.length > 0 && (
+              <Alert
+                type="error"
+                showIcon
+                icon={<WarningOutlined />}
+                message={`Có ${overMaxItems.length} vật tư vượt chỗ chứa!`}
+                description={
+                  <ul style={{ margin: "4px 0 0 0", paddingLeft: 20 }}>
+                    {overMaxItems.map((item) => {
+                      const max = item.max_stock;
+                      const current = item.stock_quantity;
+                      const available = max - current;
+                      return (
+                        <li key={item.material_id}>
+                          <strong>
+                            {item.material_code} — {item.material_name}
+                          </strong>
+                          : Tồn {current} + Nhập {item.quantity} ={" "}
+                          {current + item.quantity} (Max: {max}, còn chỗ{" "}
+                          {available})
+                        </li>
+                      );
+                    })}
+                  </ul>
+                }
+                style={{ marginBottom: 16 }}
+              />
+            )}
 
             {requestItems.length === 0 ? (
               <div className={styles.emptyState}>
@@ -967,16 +963,110 @@ const EditRequest = () => {
                 </Button>
               </div>
             ) : (
-              <div className={styles.tableWrapper}>
-                <Table
-                  rowKey="material_id"
-                  columns={materialColumns}
-                  dataSource={requestItems}
-                  pagination={false}
-                  size="middle"
-                  scroll={{ x: 900 }}
-                  className={styles.mainTable}
-                />
+              <Table
+                rowKey="material_id"
+                columns={materialColumns}
+                dataSource={requestItems}
+                pagination={false}
+                size="middle"
+                className={styles.mainTable}
+                summary={renderSummary}
+              />
+            )}
+          </Card>
+
+          {/* NCC */}
+          <Card className={styles.card} bordered={false}>
+            <div className={styles.cardHeader}>
+              <div className={styles.cardHeaderIcon}>
+                <TeamOutlined />
+              </div>
+              <div>
+                <h2>2. Nhà cung cấp</h2>
+                <p>
+                  Chọn NCC đáp ứng danh sách vật tư (ưu tiên NCC có đủ tất cả)
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.divider} />
+
+            <Form.Item name="supplier_id" hidden>
+              <Input />
+            </Form.Item>
+
+            {requestItems.length === 0 ? (
+              <Alert
+                type="info"
+                showIcon
+                message="Vui lòng thêm vật tư trước"
+                description="Sau khi thêm vật tư, hệ thống sẽ tìm NCC đáp ứng."
+              />
+            ) : !selectedSupplier ? (
+              <button
+                type="button"
+                className={styles.supplierPicker}
+                onClick={openSupplierModal}
+              >
+                <div className={styles.supplierPickerIcon}>
+                  <TeamOutlined />
+                </div>
+
+                <div className={styles.supplierPickerContent}>
+                  <strong>Chọn nhà cung cấp</strong>
+                  <span>
+                    Hệ thống sẽ tìm NCC đáp ứng {requestItems.length} vật tư đã
+                    chọn
+                  </span>
+                </div>
+              </button>
+            ) : (
+              <div className={styles.selectedSupplier}>
+                <div className={styles.selectedSupplierMain}>
+                  <div className={styles.selectedSupplierAvatar}>
+                    {String(selectedSupplier?.name || "?")
+                      .trim()
+                      .charAt(0)
+                      .toUpperCase()}
+                  </div>
+
+                  <div className={styles.selectedSupplierInfo}>
+                    <div className={styles.selectedSupplierTitle}>
+                      {selectedSupplier?.name}
+                    </div>
+                    <div className={styles.selectedSupplierTax}>
+                      MST: {selectedSupplier?.tax_code || "—"}
+                    </div>
+                  </div>
+
+                  <div className={styles.selectedSupplierStatus}>
+                    {(() => {
+                      const info = getSupplierStatusInfo(selectedSupplier);
+                      return (
+                        <span
+                          className={`${styles.statusBadge} ${
+                            styles[info.className] || ""
+                          }`}
+                        >
+                          {info.text}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                <div className={styles.selectedSupplierActions}>
+                  <Button icon={<TeamOutlined />} onClick={openSupplierModal}>
+                    Đổi NCC
+                  </Button>
+                  <Button
+                    danger
+                    icon={<CloseOutlined />}
+                    onClick={handleClearSupplier}
+                  >
+                    Xóa
+                  </Button>
+                </div>
               </div>
             )}
           </Card>
@@ -994,7 +1084,7 @@ const EditRequest = () => {
             </div>
             <div className={styles.divider} />
             <Form.Item name="note" style={{ marginBottom: 0 }}>
-              <TextArea rows={4} placeholder="Nhập ghi chú..." />
+              <TextArea rows={3} placeholder="Nhập ghi chú..." />
             </Form.Item>
           </Card>
         </Form>
@@ -1003,18 +1093,7 @@ const EditRequest = () => {
       {/* FOOTER */}
       <div className={styles.footer}>
         <div className={styles.footerInner}>
-          <div className={styles.footerSummary}>
-            <span className={styles.footerDot} />
-            <span>{requestItems.length} loại vật tư</span>
-            {selectedSupplier && (
-              <>
-                <span className={styles.footerSeparator}>•</span>
-                <span className={styles.footerSupplier}>
-                  NCC: {selectedSupplier.name}
-                </span>
-              </>
-            )}
-          </div>
+          <div className={styles.footerSummary}></div>
 
           <div className={styles.footerActions}>
             <Button
@@ -1027,6 +1106,7 @@ const EditRequest = () => {
               icon={<SaveOutlined />}
               loading={submitting}
               onClick={() => handleSave("DRAFT")}
+              disabled={overMaxItems.length > 0}
             >
               Lưu nháp
             </Button>
@@ -1035,97 +1115,238 @@ const EditRequest = () => {
               icon={<SendOutlined />}
               loading={submitting}
               onClick={() => handleSave("PENDING")}
+              disabled={overMaxItems.length > 0}
             >
-              Gửi duyệt
+              Gửi yêu cầu
             </Button>
           </div>
         </div>
       </div>
 
-      {/* MODAL VẬT TƯ */}
+      {/* MODAL VẬT TƯ — DẠNG ROW LIST */}
       <Modal
-        title="Chọn vật tư"
+        title={null}
         open={isMaterialModalOpen}
         onCancel={() => {
           setIsMaterialModalOpen(false);
           setMaterialSearch("");
         }}
         footer={null}
-        width={1000}
+        width={860}
         getContainer={false}
+        styles={{ body: { padding: 0 } }}
+        className={styles.premiumModal}
       >
-        <Input
-          prefix={<SearchOutlined />}
-          placeholder="Tìm vật tư..."
-          value={materialSearch}
-          onChange={(e) => setMaterialSearch(e.target.value)}
-          allowClear
-          size="large"
-          style={{ marginBottom: 16 }}
-        />
+        <div className={styles.modalHeader}>
+          <div className={styles.modalHeaderLeft}>
+            <div className={styles.modalHeaderIcon}>
+              <ShoppingOutlined />
+            </div>
+            <div>
+              <div className={styles.modalHeaderTitle}>Chọn vật tư</div>
+              <div className={styles.modalHeaderSub}>
+                Tìm và chọn vật tư cần thêm vào yêu cầu
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <Table
-          rowKey="id"
-          loading={loading}
-          dataSource={filteredMaterials}
-          pagination={{ pageSize: 8, showSizeChanger: false }}
-          scroll={{ x: 750 }}
-          onRow={(record) => ({
-            onClick: () => handleAddMaterial(record),
-            style: { cursor: "pointer" },
-          })}
-          columns={[
-            { title: "Mã", dataIndex: "code", width: 150 },
-            { title: "Tên vật tư", dataIndex: "name" },
-            { title: "ĐVT", dataIndex: "unit", width: 100 },
-            {
-              title: "Tồn kho",
-              key: "stock",
-              width: 120,
-              align: "right",
-              render: (_, r) =>
-                Number(
-                  r?.current_stock ?? r?.stock_quantity ?? 0,
-                ).toLocaleString("vi-VN"),
-            },
-          ]}
-        />
+        <div className={styles.modalBody}>
+          <Input
+            prefix={<SearchOutlined />}
+            placeholder="Tìm theo mã hoặc tên vật tư..."
+            value={materialSearch}
+            onChange={(e) => setMaterialSearch(e.target.value)}
+            allowClear
+            size="large"
+            className={styles.searchInput}
+          />
+
+          <div className={styles.modalCount}>
+            <strong>{filteredMaterials.length}</strong> vật tư
+          </div>
+
+          {filteredMaterials.length === 0 ? (
+            <div className={styles.emptyState} style={{ minHeight: 200 }}>
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description="Không tìm thấy vật tư"
+              />
+            </div>
+          ) : (
+            <div className={styles.materialList}>
+              {filteredMaterials.map((m) => {
+                const maxStock = m.max_stock || 0;
+                const isFull = maxStock > 0 && m.current_stock >= maxStock;
+
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`${styles.materialRow} ${
+                      isFull ? styles.materialRowFull : ""
+                    }`}
+                    onClick={() => handleAddMaterial(m)}
+                    disabled={isFull}
+                  >
+                    <div className={styles.materialRowLeft}>
+                      <div className={styles.materialRowCode}>{m.code}</div>
+                      <div className={styles.materialRowInfo}>
+                        <div className={styles.materialRowName}>{m.name}</div>
+                        <div className={styles.materialRowMeta}>
+                          <span className={styles.materialRowUnit}>
+                            {m.unit}
+                          </span>
+                          <span
+                            className={
+                              isFull
+                                ? styles.materialRowStockFull
+                                : styles.materialRowStock
+                            }
+                          >
+                            Tồn: {m.current_stock}
+                            {maxStock > 0 && ` / ${maxStock}`}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={styles.materialRowRight}>
+                      {isFull ? (
+                        <span className={styles.materialRowBadgeFull}>
+                          Đã đầy
+                        </span>
+                      ) : (
+                        <span className={styles.materialRowAdd}>
+                          <PlusOutlined /> Thêm
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </Modal>
 
-      {/* MODAL NCC */}
+      {/* MODAL NCC — DẠNG CARD LIST */}
       <Modal
-        title="Chọn nhà cung cấp"
+        title={null}
         open={isSupplierModalOpen}
         onCancel={() => setIsSupplierModalOpen(false)}
         footer={null}
-        width={1100}
+        width={820}
         getContainer={false}
+        styles={{ body: { padding: 0 } }}
+        className={styles.premiumModal}
       >
-        <div style={{ marginBottom: 16, display: "flex", gap: 8 }}>
+        <div className={styles.modalHeader}>
+          <div className={styles.modalHeaderLeft}>
+            <div className={styles.modalHeaderIcon}>
+              <TeamOutlined />
+            </div>
+            <div>
+              <div className={styles.modalHeaderTitle}>Chọn nhà cung cấp</div>
+              <div className={styles.modalHeaderSub}>
+                Hệ thống tìm NCC đáp ứng {requestItems.length} vật tư đã chọn
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.modalBody}>
           <Input
             prefix={<SearchOutlined />}
-            placeholder="Tìm NCC..."
+            placeholder="Tìm theo tên NCC, mã số thuế..."
             value={supplierSearch}
             onChange={(e) => setSupplierSearch(e.target.value)}
             allowClear
-            style={{ flex: 1 }}
+            size="large"
+            className={styles.searchInput}
           />
-          <Button onClick={handleResetSupplierFilters}>Xóa lọc</Button>
-        </div>
 
-        <Table
-          rowKey="id"
-          dataSource={filteredSuppliers}
-          columns={supplierColumns}
-          pagination={{ pageSize: 7, showSizeChanger: false }}
-          onRow={(record) => ({
-            onClick: () => handleSelectSupplier(record),
-            style: { cursor: "pointer" },
-          })}
-          locale={{
-            emptyText: <Empty description="Không tìm thấy NCC" />,
-          }}
-        />
+          {loadingSuppliers ? (
+            <div style={{ textAlign: "center", padding: 60 }}>
+              <Spin size="large" />
+            </div>
+          ) : filteredSuppliers.length === 0 ? (
+            <Empty description="Không tìm thấy NCC nào đáp ứng vật tư" />
+          ) : (
+            <>
+              <div className={styles.modalCount}>
+                <strong>{filteredSuppliers.length}</strong> nhà cung cấp phù hợp
+              </div>
+
+              <div className={styles.supplierList}>
+                {filteredSuppliers.map((opt) => {
+                  const isFull = opt.matchedCount === opt.totalCount;
+                  const supplier = opt.supplier;
+
+                  return (
+                    <button
+                      key={supplier.id}
+                      type="button"
+                      className={`${styles.supplierCard} ${
+                        isFull ? styles.supplierCardFull : ""
+                      }`}
+                      onClick={() => handleSelectSupplier(opt)}
+                    >
+                      <div className={styles.supplierCardLeft}>
+                        <div className={styles.supplierAvatar}>
+                          {String(supplier.name || "?")
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+                        <div className={styles.supplierInfo}>
+                          <div className={styles.supplierName}>
+                            {supplier.name}
+                            {isFull && (
+                              <span className={styles.supplierTagFull}>
+                                <CheckOutlined /> Đủ
+                              </span>
+                            )}
+                          </div>
+                          <div className={styles.supplierMeta}>
+                            MST: {supplier.tax_code}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.supplierMatch}>
+                        <div className={styles.supplierMatchText}>
+                          <strong>{opt.matchedCount}</strong>/{opt.totalCount}{" "}
+                          vật tư
+                          {!isFull && (
+                            <span className={styles.matchMissingInline}>
+                              {" "}
+                              • Thiếu {opt.missingMaterialIds.length}
+                            </span>
+                          )}
+                        </div>
+                        <div className={styles.matchBar}>
+                          <div
+                            className={`${styles.matchBarFill} ${
+                              isFull ? styles.matchBarFull : ""
+                            }`}
+                            style={{ width: `${opt.matchPercent}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className={styles.supplierRight}>
+                        <span className={styles.supplierRating}>
+                          <StarFilled /> {formatRating(supplier.rating)}
+                        </span>
+                        <span className={styles.supplierArrow}>→</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
       </Modal>
     </div>
   );

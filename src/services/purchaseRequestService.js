@@ -31,8 +31,17 @@ export const purchaseRequestService = {
         items:purchase_request_items(
           id,
           quantity,
+          price,
           material_id,
-          material:materials(id, code, name, unit, current_stock)
+          material:materials(
+            id,
+            code,
+            name,
+            unit,
+            current_stock,
+            max_stock,
+            min_stock
+          )
         )
       `,
       )
@@ -53,10 +62,12 @@ export const purchaseRequestService = {
 
     if (reqError) throw reqError;
 
+    // ⭐ Lưu kèm price (snapshot giá tại thời điểm tạo)
     const itemsData = items.map((item) => ({
       request_id: req.id,
       material_id: item.material_id,
       quantity: item.quantity,
+      price: Number(item.price ?? 0),
     }));
 
     const { error: itemsError } = await supabase
@@ -77,10 +88,7 @@ export const purchaseRequestService = {
     return true;
   },
 
-  // ===== SINH MÃ YC THEO NGÀY THÁNG GIỜ HIỆN TẠI =====
-  // Định dạng: YC-YYYYMMDD-HHMMSS
-  // Ví dụ: YC-20260922-143025
-  // ⭐ Không bao giờ trùng — mỗi giây 1 mã khác
+  // ===== SINH MÃ YC =====
   async generateCode() {
     const now = new Date();
 
@@ -95,21 +103,14 @@ export const purchaseRequestService = {
     return `YC-${year}${month}${day}-${hours}${minutes}${seconds}`;
   },
 
-  // ===== DUYỆT + TRỪ KHO =====
+  // ===== DUYỆT YC (KHÔNG TRỪ KHO) =====
+  // YC mua là để BỔ SUNG kho → KHÔNG trừ kho
+  // Chỉ trừ kho khi Xuất kho (dùng vật tư)
   async approve(requestId, approverId) {
+    // 1. Lấy YC
     const { data: request, error: reqError } = await supabase
       .from("purchase_requests")
-      .select(
-        `
-        *,
-        items:purchase_request_items(
-          id,
-          quantity,
-          material_id,
-          material:materials(id, code, name, unit, current_stock)
-        )
-      `,
-      )
+      .select("*")
       .eq("id", requestId)
       .single();
 
@@ -119,27 +120,7 @@ export const purchaseRequestService = {
       throw new Error("Chỉ duyệt được yêu cầu đang chờ!");
     }
 
-    const errors = [];
-    for (const item of request.items) {
-      if (item.material.current_stock < item.quantity) {
-        errors.push(
-          `"${item.material.name}": kho còn ${item.material.current_stock}, cần ${item.quantity}`,
-        );
-      }
-    }
-    if (errors.length > 0) {
-      throw new Error("Không đủ tồn kho:\n" + errors.join("\n"));
-    }
-
-    for (const item of request.items) {
-      const newStock = item.material.current_stock - item.quantity;
-      const { error } = await supabase
-        .from("materials")
-        .update({ current_stock: newStock })
-        .eq("id", item.material.id);
-      if (error) throw error;
-    }
-
+    // 2. Chỉ update status
     const { data, error } = await supabase
       .from("purchase_requests")
       .update({
@@ -172,6 +153,8 @@ export const purchaseRequestService = {
     if (error) throw error;
     return data;
   },
+
+  // ===== UPDATE YC =====
   async update(id, request, items) {
     // 1. Update request
     const { data: req, error: reqError } = await supabase
@@ -191,11 +174,12 @@ export const purchaseRequestService = {
 
     if (deleteError) throw deleteError;
 
-    // 3. Insert items mới
+    // 3. Insert items mới (kèm price)
     const itemsData = items.map((item) => ({
       request_id: id,
       material_id: item.material_id,
       quantity: item.quantity,
+      price: Number(item.price ?? 0),
     }));
 
     const { error: itemsError } = await supabase

@@ -1,0 +1,114 @@
+/* ==================== PAGE ==================== */
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+/* ==================== HEADER ==================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  color: #8c8c8c;
+  font-size: 13.5px;
+}
+
+/* ==================== CARD ==================== */
+.card {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+
+.card :global(.ant-card-head) {
+  min-height: 54px;
+  padding: 0 22px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.card :global(.ant-card-head-title) {
+  padding: 16px 0;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.card :global(.ant-card-body) {
+  padding: 20px 22px;
+}
+
+/* ==================== TABLE ==================== */
+.card :global(.ant-table-thead > tr > th) {
+  background: #f8fafc !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+.card :global(.ant-table-tbody > tr > td) {
+  font-size: 13.5px;
+  color: #595959;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.card :global(.ant-table-tbody > tr:hover > td) {
+  background: #f8fafc !important;
+}
+
+/* ==================== WARNING VƯỢT MAX ==================== */
+.overMaxWarning {
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.overMaxValue {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+  .title {
+    font-size: 19px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header button {
+    width: 100%;
+  }
+
+  .card :global(.ant-card-body) {
+    padding: 16px;
+  }
+}

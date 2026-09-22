@@ -47,7 +47,7 @@
 }
 
 .backBtn {
-  align-self: flex-start; /* ⭐ Nút không bị full width */
+  align-self: flex-start;
   padding-left: 0 !important;
   color: #595959 !important;
   font-size: 13px;
@@ -129,6 +129,75 @@
 }
 
 /* =========================
+   MATERIAL TABLE
+========================= */
+.mainTable :global(.ant-table) {
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mainTable :global(.ant-table-thead > tr > th) {
+  background: #fafafa !important;
+  color: #595959 !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  white-space: nowrap;
+}
+
+.mainTable :global(.ant-table-tbody > tr > td) {
+  color: #595959;
+  font-size: 13px;
+}
+
+.mainTable :global(.ant-table-tbody > tr:hover > td) {
+  background: #f8fbff !important;
+}
+
+.materialCode {
+  color: #1677ff;
+  font-weight: 600;
+}
+
+.materialName {
+  color: #262626;
+  font-weight: 500;
+}
+
+/* =========================
+   SUMMARY ROW (TỔNG CỘNG)
+========================= */
+.summaryRow :global(td) {
+  background: #f8fafc !important;
+  border-top: 1px solid #e8eef5 !important;
+  padding: 14px 16px !important;
+}
+
+.summaryInner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
+}
+
+.summaryLabel {
+  color: #262626;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.summaryValue {
+  color: #1677ff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+/* =========================
    FOOTER
 ========================= */
 .footer {
@@ -150,7 +219,6 @@
   transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Khi sidebar đóng */
 .footer.expanded {
   left: 70px;
 }
@@ -172,5 +240,13 @@
     width: 44px;
     height: 44px;
     font-size: 20px;
+  }
+
+  .summaryInner {
+    gap: 8px;
+  }
+
+  .summaryValue {
+    font-size: 16px;
   }
 }
