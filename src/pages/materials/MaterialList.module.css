@@ -1,0 +1,88 @@
+.page {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+.addBtn {
+  background: #0ea5a8 !important;
+
+  border-color: #0ea5a8 !important;
+
+  color: #ffffff !important;
+
+  border-radius: 6px;
+
+  font-weight: 500;
+
+  height: 38px;
+
+  box-shadow: 0 2px 5px rgba(14, 165, 168, 0.18);
+
+  transition: all 0.2s ease;
+}
+.filterCard {
+  margin-bottom: 16px;
+}
+.tableCard {
+  overflow: hidden;
+}
+
+/* ===== STATUS BADGE ===== */
+.statusBadge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.statusInStock {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.statusWarning {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.statusNeedBuy {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .title {
+    font-size: 18px;
+  }
+}

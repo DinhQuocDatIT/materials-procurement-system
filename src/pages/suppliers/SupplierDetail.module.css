@@ -1,0 +1,524 @@
+/* ==================== PAGE ==================== */
+.page {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 60px;
+  background: #ffffff;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+/* ==================== BREADCRUMB ==================== */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.separator {
+  color: #cbd5e1;
+}
+
+.current {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+/* ==================== PAGE HEADER ==================== */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.backBtn {
+  padding-left: 0 !important;
+  color: #595959 !important;
+  font-size: 13px;
+  height: auto !important;
+}
+
+.backBtn:hover {
+  color: #1677ff !important;
+}
+
+/* ==================== TITLE ==================== */
+.titleBlock {
+  margin-bottom: 20px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.pageSubtitle {
+  margin: 6px 0 0;
+  color: #8c8c8c;
+  font-size: 13.5px;
+}
+
+/* ==================== HERO CARD ==================== */
+.heroCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+
+.heroCard :global(.ant-card-body) {
+  padding: 28px 32px;
+}
+
+.heroContent {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 28px;
+  align-items: center;
+}
+
+.heroLogo {
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #1677ff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+}
+
+.heroInfo {
+  min-width: 0;
+}
+
+.heroName {
+  margin: 0 0 16px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+/* Meta info grid 2 cột */
+.heroMetaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 32px;
+}
+
+.heroMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.metaLabel {
+  color: #8c8c8c;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.metaValue {
+  color: #262626;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.metaValueBlue {
+  color: #1677ff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.metaTag {
+  margin: 0 !important;
+  padding: 2px 10px !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  width: fit-content;
+}
+
+/* Score box */
+.heroScoreBox {
+  min-width: 220px;
+  padding: 20px 24px;
+  background: #ffffff;
+  border: 1px solid #ffe58f;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.heroScoreLabel {
+  color: #8c8c8c;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.heroScoreValue {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.heroScoreNumber {
+  font-size: 42px;
+  font-weight: 800;
+  color: #faad14;
+  line-height: 1;
+}
+
+.heroScoreMax {
+  font-size: 18px;
+  color: #8c8c8c;
+  font-weight: 600;
+}
+
+.heroStars {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.starActive {
+  color: #faad14;
+}
+
+.starInactive {
+  color: #e5e7eb;
+}
+
+.heroStatus {
+  margin: 0 !important;
+  padding: 4px 14px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 12.5px !important;
+}
+
+/* ==================== REVIEW CARD ==================== */
+.reviewCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+
+.reviewCard :global(.ant-card-body) {
+  padding: 24px 28px;
+}
+
+.reviewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
+}
+
+.criteriaTableWrap {
+  min-width: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #262626;
+}
+
+.criteriaTableWrap :global(.ant-table-thead > tr > th) {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.criteriaTableWrap :global(.ant-table-tbody > tr > td) {
+  font-size: 13.5px;
+  color: #595959;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.criteriaName {
+  color: #262626;
+  font-weight: 500;
+}
+
+.weightCell {
+  color: #8c8c8c;
+  font-weight: 500;
+}
+
+.scoreCell {
+  color: #1677ff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.weightedCell {
+  color: #262626;
+  font-weight: 600;
+}
+
+.summaryRow td {
+  background: #fafafa !important;
+  border-top: 2px solid #e2e8f0 !important;
+  font-size: 14px;
+}
+
+.totalScore {
+  color: #1677ff;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* ==================== RADAR ==================== */
+.radarWrap {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  padding: 16px;
+  min-width: 0;
+}
+
+/* ==================== BOTTOM CARD ==================== */
+.bottomCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+}
+
+.bottomCard :global(.ant-card-body) {
+  padding: 20px 28px;
+}
+
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.commentBox {
+  background: #f0f7ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: #1677ff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.commentIcon {
+  font-size: 16px;
+}
+
+.commentContent {
+  color: #595959;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.rankBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 10px;
+  border: 1px solid #f0f0f0;
+}
+
+.rankLabel {
+  color: #8c8c8c;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rankTag {
+  margin: 0 !important;
+  padding: 6px 16px !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+}
+
+/* ==================== EMPTY ==================== */
+.emptyCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  background: #ffffff;
+}
+
+.emptyCard :global(.ant-card-body) {
+  padding: 60px 20px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 992px) {
+  .heroContent {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .heroLogo {
+    width: 70px;
+    height: 70px;
+    font-size: 30px;
+  }
+
+  .heroScoreBox {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .heroMetaGrid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .reviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .heroCard :global(.ant-card-body) {
+    padding: 20px;
+  }
+
+  .pageTitle {
+    font-size: 19px;
+  }
+
+  .heroName {
+    font-size: 18px;
+  }
+
+  .reviewCard :global(.ant-card-body) {
+    padding: 16px;
+  }
+
+  .bottomCard :global(.ant-card-body) {
+    padding: 16px;
+  }
+}
+/* ==================== INFO CARD ==================== */
+.infoCard {
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 16px;
+  background: #ffffff;
+}
+
+.infoCard :global(.ant-card-head) {
+  min-height: 54px;
+  padding: 0 22px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.infoCard :global(.ant-card-body) {
+  padding: 24px 28px;
+}
+
+.sectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #0f172a;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.sectionIcon {
+  color: #1677ff;
+  font-size: 17px;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 40px;
+}
+
+.infoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.infoLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8c8c8c;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.infoLabelIcon {
+  color: #bfbfbf;
+  font-size: 12px;
+}
+
+.infoValue {
+  color: #262626;
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .infoItem[style*="span 2"] {
+    grid-column: span 1 !important;
+  }
+}

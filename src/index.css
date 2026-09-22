@@ -80,3 +80,35 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.6);
 }
+/* =========================
+   FIX MODAL LỆCH DO SIDEBAR
+========================= */
+
+/* Modal wrap chiếm toàn viewport, không bị đẩy bởi margin */
+.ant-modal-root .ant-modal-wrap {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  overflow-x: hidden;
+}
+
+/* Modal container căn giữa */
+.ant-modal {
+  max-width: calc(100vw - 80px);
+  margin: 0 auto !important;
+  padding-bottom: 0 !important;
+  top: 40px;
+}
+
+.ant-modal-content {
+  border-radius: 14px;
+}
+
+/* Bên trong modal — không bị tràn */
+.ant-modal-body {
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}

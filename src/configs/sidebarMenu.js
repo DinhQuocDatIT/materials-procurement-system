@@ -14,32 +14,19 @@ export const sidebarMenus = [
     path: "/dashboard/materials",
     name: "Vật tư",
     icon: faBoxesStacked,
-    children: [
-      { path: "/dashboard/materials/list", name: "Danh sách vật tư" },
-      { path: "/dashboard/materials/categories", name: "Loại vật tư" },
-      { path: "/dashboard/materials/units", name: "Đơn vị tính" },
-    ],
+    children: [{ path: "/dashboard/materials/list", name: "Danh sách vật tư" }],
   },
   { path: "/dashboard/suppliers", name: "Nhà cung cấp", icon: faUserTie },
   {
-    path: "/dashboard/purchase-orders",
+    path: "/dashboard/purchase-requests",
     name: "Đơn mua hàng",
     icon: faFileInvoice,
     children: [
-      { path: "/dashboard/purchase-orders/list", name: "Danh sách đơn" },
-      { path: "/dashboard/purchase-orders/create", name: "Tạo đơn mới" },
-      { path: "/dashboard/purchase-orders/approval", name: "Phê duyệt đơn" },
+      {
+        path: "/dashboard/purchase-requests/create",
+        name: "Tạo yêu cầu mua sắm",
+      },
+      { path: "/dashboard/purchase-requests/list", name: "Danh sách yêu cầu" },
     ],
   },
-  {
-    path: "/dashboard/inventory",
-    name: "Kho",
-    icon: faWarehouse,
-    children: [
-      { path: "/dashboard/inventory/stock-in", name: "Nhập kho" },
-      { path: "/dashboard/inventory/stock-out", name: "Xuất kho" },
-      { path: "/dashboard/inventory/stocktake", name: "Kiểm kê" },
-    ],
-  },
-  { path: "/dashboard/users", name: "Người dùng", icon: faUsers },
 ];

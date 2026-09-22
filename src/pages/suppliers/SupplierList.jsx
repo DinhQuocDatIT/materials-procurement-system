@@ -26,6 +26,7 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import { supplierService } from "../../services/supplierService";
 import styles from "./SupplierList.module.css";
 
@@ -57,6 +58,8 @@ const fieldOptions = [
 ];
 
 export default function SupplierList() {
+  const navigate = useNavigate();
+
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -111,6 +114,10 @@ export default function SupplierList() {
     setEditingSupplier(supplier);
     form.setFieldsValue(supplier);
     setIsModalOpen(true);
+  };
+
+  const handleView = (supplier) => {
+    navigate(`/dashboard/suppliers/${supplier.id}`);
   };
 
   const handleDelete = async (id) => {
@@ -174,7 +181,15 @@ export default function SupplierList() {
     {
       title: "Tên nhà cung cấp",
       dataIndex: "name",
-      render: (name) => <span className={styles.supplierName}>{name}</span>,
+      render: (name, record) => (
+        <a
+          className={styles.supplierName}
+          onClick={() => handleView(record)}
+          style={{ cursor: "pointer", color: "#1677ff", fontWeight: 600 }}
+        >
+          {name}
+        </a>
+      ),
     },
     {
       title: "Mã số thuế",
@@ -241,22 +256,27 @@ export default function SupplierList() {
       fixed: "right",
       render: (_, record) => (
         <Space size={2}>
-          <Tooltip title="Xem">
+          {/* ⭐ XEM — navigate tới trang chi tiết */}
+          <Tooltip title="Xem chi tiết">
             <Button
               type="text"
               size="small"
               icon={<EyeOutlined />}
-              onClick={() => toast.info(`Xem: ${record.name}`)}
+              onClick={() => handleView(record)}
             />
           </Tooltip>
+
+          {/* SỬA */}
           <Tooltip title="Sửa">
             <Button
               type="text"
               size="small"
               icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
+              onClick={() => navigate(`/dashboard/suppliers/edit/${record.id}`)}
             />
           </Tooltip>
+
+          {/* XÓA */}
           <Popconfirm
             title="Xóa nhà cung cấp?"
             description={`Bạn chắc chắn muốn xóa "${record.name}"?`}
@@ -274,6 +294,8 @@ export default function SupplierList() {
               />
             </Tooltip>
           </Popconfirm>
+
+          {/* MORE */}
           <Tooltip title="Thêm">
             <Button
               type="text"
@@ -315,7 +337,7 @@ export default function SupplierList() {
         </Button>
       </div>
 
-      {/* BỘ LỌC (1 HÀNG GỌN GÀNG) */}
+      {/* BỘ LỌC */}
       <Card className={styles.filterCard} bodyStyle={{ padding: "16px" }}>
         <div className={styles.filterContainer}>
           <Input

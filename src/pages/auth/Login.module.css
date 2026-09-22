@@ -1,0 +1,107 @@
+/* ==================== PAGE ==================== */
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: #f8fafc;
+}
+
+/* ==================== CARD ==================== */
+.card {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 36px 32px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+/* ==================== LOGO ==================== */
+.logoBox {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.logoIcon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+  border-radius: 14px;
+  background: #1677ff;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+/* ==================== FORM ==================== */
+.card :global(.ant-form-item-label > label) {
+  color: #434343;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.card :global(.ant-input),
+.card :global(.ant-input-password) {
+  border-radius: 8px !important;
+}
+
+.inputIcon {
+  color: #bfbfbf;
+  font-size: 15px;
+}
+
+/* ==================== SUBMIT BUTTON ==================== */
+.submitBtn {
+  height: 46px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+}
+
+/* ==================== DEMO BOX ==================== */
+.demoBox {
+  text-align: center;
+  font-size: 12.5px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  margin-top: 20px;
+  color: #8c8c8c;
+}
+
+.demoBox strong {
+  color: #1677ff;
+  margin-right: 4px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 480px) {
+  .card {
+    padding: 32px 24px 24px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+}

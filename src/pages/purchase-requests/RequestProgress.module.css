@@ -1,0 +1,203 @@
+/* =========================
+   WRAPPER
+========================= */
+.wrapper {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  padding: 32px 40px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* =========================
+   STEPS CONTAINER
+========================= */
+.steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.stepItem {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  position: relative;
+  min-width: 0;
+}
+
+/* Connector giữa các bước */
+.connector {
+  position: absolute;
+  top: 22px;
+  left: -50%;
+  right: 50%;
+  height: 2px;
+  z-index: 0;
+  transition: background 0.3s ease;
+}
+
+.connectorDone {
+  background: #1677ff; /* ⭐ Xanh dương Ant Design */
+}
+
+.connectorPending {
+  background: #e5e7eb;
+}
+
+/* =========================
+   STEP CONTENT
+========================= */
+.stepContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+/* =========================
+   CIRCLE
+========================= */
+.circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  background: #ffffff;
+}
+
+/* Đã hoàn thành */
+.circleDone {
+  background: #1677ff; /* ⭐ Xanh dương */
+  color: #ffffff;
+  border: 2px solid #1677ff;
+  box-shadow: 0 4px 12px rgba(22, 119, 255, 0.25);
+}
+
+/* Đang ở bước hiện tại */
+.circleCurrent {
+  background: #ffffff;
+  color: #1677ff; /* ⭐ Xanh dương */
+  border: 2px solid #1677ff;
+  box-shadow: 0 0 0 4px rgba(22, 119, 255, 0.12);
+}
+
+/* Chưa tới */
+.circlePending {
+  background: #ffffff;
+  color: #94a3b8;
+  border: 2px solid #e5e7eb;
+}
+
+.checkIcon {
+  font-size: 16px;
+  color: #ffffff;
+}
+
+.stepNumber {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* =========================
+   TEXT
+========================= */
+.stepText {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stepLabel {
+  font-size: 14px;
+  font-weight: 650;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+
+.labelDone {
+  color: #1677ff; /* ⭐ Xanh dương */
+}
+
+.labelCurrent {
+  color: #1677ff; /* ⭐ Xanh dương */
+}
+
+.labelPending {
+  color: #94a3b8;
+}
+
+.stepDesc {
+  font-size: 12px;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.descActive {
+  color: #64748b;
+}
+
+.descPending {
+  color: #cbd5e1;
+}
+
+/* =========================
+   REJECTED BANNER
+========================= */
+.rejectedBanner {
+  margin-top: 24px;
+  padding: 12px 20px;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 8px;
+  color: #cf1322;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 20px 16px;
+  }
+
+  .connector {
+    top: 18px;
+  }
+
+  .circle {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .stepNumber {
+    font-size: 13px;
+  }
+
+  .stepLabel {
+    font-size: 12px;
+  }
+
+  .stepDesc {
+    font-size: 10px;
+    white-space: normal;
+  }
+}
