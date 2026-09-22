@@ -169,7 +169,7 @@ export default function RequestDetail() {
       {isApproved && (
         <Alert
           message="Yêu cầu đã được duyệt"
-          description="Vật tư đã được trừ khỏi kho và sẵn sàng để tạo đơn mua hàng."
+          description=""
           type="success"
           showIcon
           icon={<CheckCircleOutlined />}
